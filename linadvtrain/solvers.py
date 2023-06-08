@@ -1,0 +1,160 @@
+import scipy.linalg as linalg
+import numpy as np
+from sklearn.linear_model import Lasso
+import cvxpy as cp
+from sklearn.linear_model._ridge import _ridge_regression
+
+
+def ridge(X, y, reg, *args, **kwargs):
+    """Ridge regression."""
+    return _ridge_regression(X, y, reg, *args, **kwargs)
+
+
+def compute_q(p):
+    if p != np.Inf and p > 1:
+        q = p / (p - 1)
+    elif p == 1:
+        q = np.Inf
+    else:
+        q = 1
+    return q
+
+
+class Reweighted():
+    """Reweighted solver."""
+    def __init__(self, solver):
+        self.solver = solver
+
+    def __call__(self, X, y,  *args, w_params=None, w_samples=None, **kwargs):
+        # Adjust accordingly to sample weights
+        if w_samples is None:
+            X_rescaled = X
+            y_rescaled = y
+        else:
+            X_rescaled = X * np.sqrt(w_samples[:, None])
+            y_rescaled = y * np.sqrt(w_samples[:])
+            mask_rows = np.sqrt(w_samples) > 1e-30
+            if (~mask_rows).any():  # Solve reduced problem when w_samples is 0
+                X_rescaled = X_rescaled[mask_rows, :].copy()
+        # Adjust accordingly to parameter weights
+        if w_params is not None:
+            mask = np.sqrt(w_params) < 1e30
+            X_rescaled = X_rescaled / np.sqrt(w_params)[None, :]
+            if (~mask).any():  # Solve reduced problem when w_params is Inf
+                # remove certain values)
+                X_rescaled = X_rescaled[:, mask].copy()
+                w_params = w_params[mask].copy()
+        # Solve problem
+        results = self.solver(X_rescaled, y_rescaled, *args, **kwargs)
+        if type(results) is tuple:
+            estim_param, info = results
+        else:
+            estim_param, info = results, {}
+        if w_params is not None:
+            estim_param = estim_param / np.sqrt(w_params)
+            if (~mask).any():
+                aux = np.zeros(mask.shape)
+                aux[mask] = estim_param
+                estim_param = aux
+        return estim_param, info
+
+
+def eta_trick(values, eps=1e-20):
+    """Implement eta trick."""
+    values = np.atleast_2d(values)
+    abs_values = np.sqrt(values ** 2 + eps)#np.abs(values)
+    sum_of_values = np.sum(abs_values, axis=0)
+    c = sum_of_values / (abs_values)
+    return c
+
+
+def sq_lasso(X, y, reg=0.01, max_iter=100, verbose=False, utol=1e-12, w_params_warmstart=None, solver_params=None):
+    n_train, n_params = X.shape
+    params = np.zeros(n_params)
+    # Initialize problem
+    w_params = w_params_warmstart
+    if solver_params is None:
+        solver_params = {}
+    for i in range(max_iter):
+        # ------- 1. Solve reweighted ridge regression ------
+        params_, subprob_info = Reweighted(ridge)(X, y, reg,  w_params=w_params, **solver_params)
+
+        # ------- 2. Perform eta trick  -------
+        abs_error = np.abs(X @ params_ - y)
+        w_params = eta_trick(params_[:, None]).flatten()
+
+        # -------  Generate report ------
+        update_size = np.linalg.norm(params_ - params, ord=2)
+        param_norm = np.linalg.norm(params_, ord=1)
+        if verbose == True:
+            print(f'Iteration {i} | update size: {update_size:4.3e} | w_params: {np.mean(w_params):4.3e} | param norm: {param_norm:4.3e}')
+        info = {'w_params': w_params, 'update_size': update_size, 'n_iter': i}
+        params = params_  # update parameters
+
+        # ------- Termination criterion -------
+        if update_size < utol:
+            break
+
+    return params, info
+
+
+def lin_advtrain(X, y, adv_radius=0.01, max_iter=100, verbose=False,
+                 p=2, method='w-ridge', utol=1e-12, solver_params=None):
+    n_train, n_params = X.shape
+    params = np.zeros(n_params)
+    # Initialize problem
+    w_samples = 1 / n_train * np.ones(n_train)
+    w_params = None
+    regul_correction = 1
+    # Set info
+    info = {}
+    subprob_info = {}
+    if solver_params is None:
+        if method == 'w-sqlasso':
+            solver_params = {'utol': 1e-12, 'max_iter': 10}
+        elif method == 'w-ridge':
+            solver_params = {}
+    for i in range(max_iter):
+        # ------- 1. Solve reweighted ridge regression ------
+        reg = regul_correction * adv_radius ** 2
+        if method == 'w-sqlasso':
+            params_, subprob_info = Reweighted(sq_lasso)(X, y, reg, w_samples=w_samples, w_params_warmstart=subprob_info.get('w_params', None), **solver_params)
+        elif method == 'w-ridge':
+            params_, subprob_info = Reweighted(ridge)(X, y, reg, w_samples=w_samples, w_params=w_params, **solver_params)
+
+        # ------- 2. Perform eta trick  -------
+        abs_error = np.abs(X @ params_ - y)
+        q = compute_q(p)
+        param_norm = np.linalg.norm(params_, ord=q)
+        if p == np.inf and method == 'w-ridge':
+            M = np.abs([abs_error, *[adv_radius * p * np.ones(n_train) for p in params_]])
+            c = eta_trick(M)
+            w_params = np.sum(c[1:], axis=1)
+            # Fix regularization parameter
+            regul_correction = np.max(w_params)
+            w_params = w_params / np.max(w_params)
+        else:
+            M = np.abs([abs_error, adv_radius * param_norm * np.ones(n_train)])
+            c = eta_trick(M)
+            regul_correction = np.sum(c[1])
+        w_samples = c[0]
+
+        # Fix regularization parameter
+        regul_correction = regul_correction / np.sum(w_samples)
+        w_samples = w_samples / np.sum(w_samples)
+
+        # -------  Generate report ------
+        update_size = np.linalg.norm(params_ - params, ord=2)
+        if verbose == True:
+            mean_regul = np.mean(w_samples) * regul_correction if w_samples is not None else regul_correction
+            print(f'Iteration {i} | update size: {update_size:4.3e} | regul: {mean_regul:4.3e} | '
+                  f'param norm: {param_norm:4.3e} | mean abs error: {np.mean(abs_error):4.3e} | '
+                  f'loss: {np.mean((abs_error + adv_radius * param_norm) ** 2 )}')
+        info = {'w_params': w_params, 'w_samples': w_samples, 'regul_correction':regul_correction,
+                'update_size': update_size, 'n_iter': i}
+        params = params_  # update parameters
+
+        # ------- Termination criterion -------
+        if update_size < utol:
+            break
+    return params, info
