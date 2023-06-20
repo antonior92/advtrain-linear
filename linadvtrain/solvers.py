@@ -1,8 +1,6 @@
-import scipy.linalg as linalg
 import numpy as np
-from sklearn.linear_model import Lasso
-import cvxpy as cp
 from sklearn.linear_model._ridge import _ridge_regression
+from .cvxpy_impl import MinimumNorm
 
 
 def ridge(X, y, reg, *args, **kwargs):
@@ -62,7 +60,9 @@ class Reweighted():
 def eta_trick(values, eps=1e-20):
     """Implement eta trick."""
     values = np.atleast_2d(values)
-    abs_values = np.sqrt(values ** 2 + eps)#np.abs(values)
+    # for exact solution use eps=0 so that np.abs(values)
+    # this might lead to numerical instabilities tho
+    abs_values = np.sqrt(values ** 2 + eps)
     sum_of_values = np.sum(abs_values, axis=0)
     c = sum_of_values / (abs_values)
     return c
@@ -98,8 +98,73 @@ def sq_lasso(X, y, reg=0.01, max_iter=100, verbose=False, utol=1e-12, w_params_w
     return params, info
 
 
-def lin_advtrain(X, y, adv_radius=0.01, max_iter=100, verbose=False,
+def get_radius(X, y, option, p):
+    """Return the adversarial radius for which the zero solution is optimal.
+
+    Parameters
+    ----------
+    X : array-like of shape (n_samples, n_features)
+        Input data.
+    y : array-like of shape (n_samples,) or (n_samples,)
+        Output data.
+    option : {'zero', 'randn_zero', 'interp'}
+        what type of radius one is interested in
+    Returns
+    -------
+    adv_radius : float or array-like of shape (n_realizations, )
+        Adversarial radius for which the zero solution is optimal.
+    """
+    if option == 'zero':
+        return np.linalg.norm(X.T @ y, ord=p) / np.sum(np.abs(y))
+    elif option == 'randn_zero':
+        n_realizations = 100
+        e = np.random.randn(X.shape[0], n_realizations)
+        adv_radius_est = np.mean(np.linalg.norm(X.T @ e, ord=p, axis=0) / np.sum(np.abs(e), axis=0))
+        return np.percentile(adv_radius_est, 50)  # return value such that 50% of the realizations will yield zero
+    elif option == 'interp':
+        min_norm = MinimumNorm(X, y, compute_q(p))
+        return min_norm.adv_radius()
+    else:
+        raise ValueError(f'option {option} not recognized')
+
+
+def lin_advtrain(X, y, adv_radius=None, max_iter=100, verbose=False,
                  p=2, method='w-ridge', utol=1e-12, solver_params=None):
+    """Return the adversarial radius for which the zero solution is optimal.
+
+    Parameters
+    ----------
+    X : array-like of shape (n_samples, n_features)
+        Input data.
+    y : array-like of shape (n_samples,) or (n_samples,)
+        Output data.
+    adv_radius : float or {'zero', 'randn_zero', 'interp'}, default=None
+        Adversarial radius used for training. If none use 'randn_zero'
+    max_iter : int, default=100
+        Maximum number of iterations.
+    verbose : bool, default=False
+        Verbosity.
+    p : float, default=2
+        Norm used for the adversarial radius. Use p=2 for the l2 norm,
+        p=np.inf for the l_inf norm.
+    method : {'w-ridge', 'w-sqlasso'}, default='w-ridge'
+        Method used for adversarial training.
+    utol : float, default=1e-12
+        Tolerance for the update size.
+    solver_params : dict, default=None
+        Parameters passed to the solver.
+
+    Returns
+    -------
+    params : array-like of shape (n_features, )
+        Estimated parameters.
+    info : dict
+        Dictionary containing information about the training.
+    """
+    if adv_radius is None:
+        adv_radius = 'randn_zero'
+    if isinstance(adv_radius, str):
+        adv_radius = get_radius(X, y, adv_radius, p)
     n_train, n_params = X.shape
     params = np.zeros(n_params)
     # Initialize problem

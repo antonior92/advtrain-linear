@@ -40,6 +40,7 @@ def test_with_zeros():
     rhs = c1 * w1 ** 2 + c3 * w3 ** 2
     assert allclose(lhs, rhs)
 
+
 def test_three_parameters():
     w1 = np.array([75, 141, 206, 135])
     w2 = np.array([1, 2, 3, 4])
@@ -48,7 +49,6 @@ def test_three_parameters():
     lhs = (w1 + w2 + w3) ** 2
     rhs = c1 * w1 ** 2 + c2 * w2 ** 2 + c3 * w3 ** 2
     assert allclose(lhs, rhs)
-
 
 
 # -------- Lin Adv train --------- #
@@ -114,6 +114,26 @@ def test_l1_diabetes(adv_radius):
     mdl = cvxpy_impl.AdversarialTraining(X, y, p=np.inf)
     params_cvxpy = mdl(adv_radius=adv_radius, verbose=False)
     assert allclose(params_cvxpy, params,  rtol=1e-8, atol=1e-8)
+
+
+# Case where w_params would go to infinity
+def test_l1_diabetes_zero():
+    # Generate data
+    X, y = get_diabetes()
+    n_train, n_params = X.shape
+    # Test if adv_radius='zeros' produce zero solution
+    params, info = lin_advtrain(X, y, adv_radius='zero', p=np.inf)
+    assert allclose(params, np.zeros_like(params),  rtol=1e-8, atol=1e-8)
+
+    # Test if adv_radius>solvers.get_radius(X, y, 'zero', p=p) produce zero solution
+    adv_radius = 1.1 * solvers.get_radius(X, y, 'zero', p=np.inf)
+    params, info = lin_advtrain(X, y, adv_radius='adv_radius',  p=np.inf)
+    assert allclose(params, np.zeros_like(params),  rtol=1e-8, atol=1e-8)
+
+    # Test if adv_radius < solvers.get_radius(X, y, 'zero', p=p) produce non-zero solution
+    adv_radius = 0.9 * solvers.get_radius(X, y, 'zero', p=np.inf)
+    params, info = lin_advtrain(X, y, adv_radius='zeros', p=np.inf)
+    assert not allclose(params, np.zeros_like(params),  rtol=1e-8, atol=1e-8)
 
 
 

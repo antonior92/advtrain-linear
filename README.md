@@ -14,7 +14,7 @@ chosen to maximize the model error.
 
 Given pair of input-output samples $(x_i, y_i), i = 1, \dots, n$, it is formulated as a min-max optimization problem:
 
-$$\min_\beta \sum_{i=1}^n\frac{1}{n} \max_{\|\Delta x_i\| \le \delta} (y_i - \beta^\top(x_i+ \Delta x_i))^2$$
+$$\min_\beta \frac{1}{n} \sum_{i=1}^n \max_{\|\Delta x_i\| \le \delta} (y_i - \beta^\top(x_i+ \Delta x_i))^2$$
 
 ## Usage
 

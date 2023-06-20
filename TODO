@@ -1,0 +1,9 @@
+- Double check zero solution, something seems a bit off. (Maybe with cvxpy)
+- Maybe unify cvxpy call under the same interface as linadvtrain
+- Add more termination criteria for linadvtrain (ftol, gtol, xtol, maxiter...)
+- Adapt magic example to work with standard values from get_radiues
+- Add method to compute cut-off point in overparametrized example (see theorem 1)
+- Change from gif to single image, 1 d example
+- Add diabetes example plot to readme
+- Add advantages in readme
+- Test default parameter for linadvtrain

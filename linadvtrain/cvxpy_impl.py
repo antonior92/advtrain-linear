@@ -62,3 +62,30 @@ class SqLasso:
             v = np.zeros(self.param.shape)
         return v
 
+
+
+
+class MinimumNorm():
+    def __init__(self, X, y, p, **kwargs):
+        ntrain, nfeatures = X.shape
+
+        param = cp.Variable(nfeatures)
+        objective = cp.Minimize(cp.pnorm(param, p=p))
+        constraints = [y == X @ param, ]
+        prob = cp.Problem(objective, constraints)
+
+        try:
+            result = prob.solve(**kwargs)
+            self.param = param.value
+            self.alpha = constraints[0].dual_value
+        except:
+            self.param = np.zeros(nfeatures)
+            self.alpha = np.zeros(ntrain)
+        self.prob = prob
+        self.ntrain = ntrain
+
+    def __call__(self):
+        return self.param
+
+    def adv_radius(self):
+        return 1 / (self.ntrain * np.max(np.abs(self.alpha)))

@@ -65,7 +65,7 @@ coefs_advtrain_linf = np.stack((coefs_advtrain_linf_)).T
 
 #%%
 # Display results
-
+from linadvtrain.solvers import get_radius
 def plot_coefs(alphas, coefs, name):
     fig, ax = plt.subplots(num=name)
 
@@ -73,10 +73,12 @@ def plot_coefs(alphas, coefs, name):
     for coef_l, c in zip(coefs, colors):
         ax.semilogx(1/alphas, coef_l, c=c)
     if name == 'advtrain_linf':
+        ax.axvline(1/get_radius(X, y, 'zero', p=np.inf))
         axt = ax.twinx()
         axt.semilogx(1/alphas, [info['n_iter'] for info in info_linf])
 
     if name == 'advtrain_l2':
+        ax.axvline(1/get_radius(X, y, 'zero', p=2))
         axt = ax.twinx()
         axt.semilogx(1 / alphas, [info['n_iter'] for info in info_l2])
 
