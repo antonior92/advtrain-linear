@@ -70,12 +70,22 @@ ridge regression. See [examples/diabetes_path.py](examples/diabetes_path.py) for
 
 |  Lasso | Adv. training $\ell_\infty$ | 
 | :---: | :---: |
-| ![lasso](imgs/lasso.png) | ![adv_linf](imgs/advtrain_linf.png)| 
+| ![lasso](imgs/diabetes/lasso.png) | ![adv_linf](imgs/diabetes/advtrain_linf.png)| 
 
 | Ridge | Adv. training $\ell_2$ |
 | :---: | :---: |
-| ![ridge](imgs/ridge.png) | ![advtrain_l2](imgs/advtrain_l2.png) |
+| ![ridge](imgs/diabetes/ridge.png) | ![advtrain_l2](imgs/diabetes/advtrain_l2.png) |
 
-## Installation
+### Relation to minimum norm solution
+For small delta adversarial training interpolates the training data. 
+See [examples/transition_into_interpolation.py](examples/transition_into_interpolation.py) for more details.
 
-## Benefits of adversarial training
+
+|  Lasso | Adv. training $\ell_\infty$ | 
+| :---: | :---: |
+| ![lasso](imgs/transition_into_interpolation/lasso.png) | ![adv_linf](imgs/transition_into_interpolation/advtrain_linf.png)| 
+
+| Ridge | Adv. training $\ell_2$ |
+| :---: | :---: |
+| ![ridge](imgs/transition_into_interpolation/ridge.png) | ![advtrain_l2](imgs/transition_into_interpolation/advtrain_l2.png) |
+

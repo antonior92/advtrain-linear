@@ -72,16 +72,16 @@ def plot_mse(alphas, coefs, name):
     ax.plot(1/alphas, mse, 'o-', label='Ridge')
     if name in ['advtrain_l2' , 'advtrain_linf']:
         p = np.inf if name == 'advtrain_linf' else 2
-        ax.axvline(1 / get_radius(X, y, 'zero', p=p))
-        ax.axvline(1 / get_radius(X, y, 'randn_zero', p=p))
         ax.axvline(1 / get_radius(X, y, 'interp', p=p))
     ax.set_xscale('log')
     ax.set_yscale('log')
 
-plot_mse(alphas_ridge, coefs_ridge, 'ridge')
-plot_mse(alphas_lasso, coefs_lasso, 'lasso')
-plot_mse(alpha_advtrain_l2, coefs_advtrain_l2, 'advtrain_l2')
-plot_mse(alpha_advtrain_linf, coefs_advtrain_linf, 'advtrain_linf')
+def transition_into_interpolation():
+    plot_mse(alphas_ridge, coefs_ridge, 'ridge')
+    plot_mse(alphas_lasso, coefs_lasso, 'lasso')
+    plot_mse(alpha_advtrain_l2, coefs_advtrain_l2, 'advtrain_l2')
+    plot_mse(alpha_advtrain_linf, coefs_advtrain_linf, 'advtrain_linf')
 
 if __name__ == "__main__":
+    transition_into_interpolation()
     plt.show()
