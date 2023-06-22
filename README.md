@@ -14,10 +14,10 @@ chosen to maximize the model error.
 
 Given pair of input-output samples $(x_i, y_i), i = 1, \dots, n$, it is formulated as a min-max optimization problem:
 
-$$\min_\beta \frac{1}{n} \sum_{i=1}^n \max_{\|\Delta x_i\| \le \delta} (y_i - \beta^\top(x_i+ \Delta x_i))^2$$
+$$\min_\beta \frac{1}{n} \sum_{i=1}^n \max_{||\Delta x_i|| \le \delta} (y_i - \beta^\top(x_i+ \Delta x_i))^2$$
 
 ## Usage
-
+### One dimensional example
 ```python
 from linadvtrain.solvers import lin_advtrain
 import numpy as np
@@ -33,12 +33,48 @@ adv_radius = 0.05
 estimated_params, info = lin_advtrain(X, y, adv_radius=adv_radius)
 ```
 
-The gif below shows the adversarial training the output of the example above, with the adversarial radius highlighted.
-See [examples/one_dimensional.py](examples/one_dimensional.py) for more details.
+The image ilustrate the adversarial training the output of the example above, with the adversarial radius
+being highlighted as error bars.  See [examples/one_dimensional.py](examples/one_dimensional.py) for more details.
 
 ![one](imgs/one_dimensional.png)
 
 
+### Multi-dimensional example
+Bellow we illustrate one example using diabetes dataset. When `p = 2` we are computing the $\ell_2$ adversarial training,
+and when `p = np.inf` we are computing the $\ell_\infty$ adversarial training. Since adv_radius is not set,
+the default value is used. 
+
+```python
+import numpy as np
+from linadvtrain.solvers import lin_advtrain
+from sklearn import datasets
+
+X, y = datasets.load_diabetes(return_X_y=True)
+# Standardize data
+X -= X.mean(axis=0)
+X /= X.std(axis=0)
+
+# Compute linf adversarial training
+estim_param, info = lin_advtrain(X, y, p=np.inf)
+
+# Compute linf adversarial training
+estim_param, info = lin_advtrain(X, y, p=np.inf)
+```
+
+
+# Properties of adversarial training
+
+### Similarities with Lasso and Ridge regression
+$\ell_\infty$ adversarial training has similarities with Lasso. $\ell_2$ adversarial training has similarities with
+ridge regression. See [examples/diabetes_path.py](examples/diabetes_path.py) for more details.
+
+|  Lasso | Adv. training $\ell_\infty$ | 
+| :---: | :---: |
+| ![lasso](imgs/lasso.png) | ![adv_linf](imgs/advtrain_linf.png)| 
+
+| Ridge | Adv. training $\ell_2$ |
+| :---: | :---: |
+| ![ridge](imgs/ridge.png) | ![advtrain_l2](imgs/advtrain_l2.png) |
 
 ## Installation
 
