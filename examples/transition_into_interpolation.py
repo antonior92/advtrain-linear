@@ -6,7 +6,7 @@ from sklearn.linear_model import lasso_path
 from sklearn import datasets
 from sklearn import linear_model
 import tqdm
-from linadvtrain.solvers import lin_advtrain
+from linadvtrain.solvers import lin_advtrain, get_radius
 import matplotlib
 matplotlib.use('webagg')
 
@@ -17,7 +17,7 @@ eps_ridge = 1e-6
 eps_adv = 1e-5
 # alpha_max
 amax_ridge = 1e4
-amax_adv = 1
+amax_adv = 10
 # number of points along the path
 n_alphas = 40
 # alpha_min path (automatically computed)
@@ -34,7 +34,7 @@ seed = 1
 
 #%%
 rng = np.random.RandomState(seed)
-beta = 1 / np.sqrt(n_features) * rng.randn(n_features)
+beta = 1 / np.sqrt(n_features) * np.ones(n_features)
 X = rng.randn(n_samples, n_features)
 
 # Generate output with random additive noise
@@ -70,6 +70,11 @@ def plot_mse(alphas, coefs, name):
     fig, ax = plt.subplots(num=name)
     mse = np.mean((y[:, None] - X @ coefs) **2, axis=0)
     ax.plot(1/alphas, mse, 'o-', label='Ridge')
+    if name in ['advtrain_l2' , 'advtrain_linf']:
+        p = np.inf if name == 'advtrain_linf' else 2
+        ax.axvline(1 / get_radius(X, y, 'zero', p=p))
+        ax.axvline(1 / get_radius(X, y, 'randn_zero', p=p))
+        ax.axvline(1 / get_radius(X, y, 'interp', p=p))
     ax.set_xscale('log')
     ax.set_yscale('log')
 

@@ -7,6 +7,7 @@ from sklearn import datasets
 from sklearn import linear_model
 import tqdm
 from linadvtrain.solvers import lin_advtrain
+from linadvtrain.cvxpy_impl import AdversarialTraining
 import matplotlib
 matplotlib.use('webagg')
 
@@ -57,6 +58,7 @@ for a in tqdm.tqdm(alphas_adv):
     coefs_advtrain_l2_.append(coefs if coefs is not None else np.zeros(m))
     info_l2.append(info)
     coefs, info = lin_advtrain(X, y,  adv_radius=a, p=np.inf, method='w-ridge')
+    coefs = AdversarialTraining(X, y, p=np.inf)(a)
     info_linf.append(info)
     coefs_advtrain_linf_.append(coefs if coefs is not None else np.zeros(m))  # p = infty seems ill conditioned
 coefs_advtrain_l2 = np.stack((coefs_advtrain_l2_)).T
@@ -74,11 +76,13 @@ def plot_coefs(alphas, coefs, name):
         ax.semilogx(1/alphas, coef_l, c=c)
     if name == 'advtrain_linf':
         ax.axvline(1/get_radius(X, y, 'zero', p=np.inf))
+        ax.axvline(1/get_radius(X, y, 'randn_zero', p=np.inf))
         axt = ax.twinx()
         axt.semilogx(1/alphas, [info['n_iter'] for info in info_linf])
 
     if name == 'advtrain_l2':
         ax.axvline(1/get_radius(X, y, 'zero', p=2))
+        ax.axvline(1/get_radius(X, y, 'randn_zero', p=np.inf))
         axt = ax.twinx()
         axt.semilogx(1 / alphas, [info['n_iter'] for info in info_l2])
 

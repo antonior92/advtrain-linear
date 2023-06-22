@@ -1,4 +1,4 @@
-from linadvtrain.solvers import lin_advtrain
+from linadvtrain.solvers import lin_advtrain, get_radius
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -7,7 +7,7 @@ def one_dimensional(adv_radius=0.05):
     # Generate dataset
     rng = np.random.RandomState(5)
     x = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
-    noise = 0.15 * rng.randn(len(x))
+    noise = 0.1 * rng.randn(len(x))
     y = x + noise
 
     # Adversarial estimation
@@ -29,5 +29,5 @@ def one_dimensional(adv_radius=0.05):
 
 
 if __name__ == '__main__':
-    one_dimensional(adv_radius=0.05)
+    one_dimensional()
     plt.show()

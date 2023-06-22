@@ -33,9 +33,10 @@ adv_radius = 0.05
 estimated_params, info = lin_advtrain(X, y, adv_radius=adv_radius)
 ```
 
-The gif below shows the adversarial training the output of the example above. 
-As we change the adversarial radius. See [examples/one_dimensional.py](examples/one_dimensional.py) for more details.
-![one](imgs/one_dimensional.gif)
+The gif below shows the adversarial training the output of the example above, with the adversarial radius highlighted.
+See [examples/one_dimensional.py](examples/one_dimensional.py) for more details.
+
+![one](imgs/one_dimensional.png)
 
 
 
