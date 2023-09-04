@@ -1,1 +1,1 @@
-from .solvers import lin_advtrain, get_radius
+from .regression import lin_advregr, get_radius

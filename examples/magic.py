@@ -4,7 +4,7 @@ import sklearn.model_selection
 from sklearn.linear_model import ElasticNetCV
 
 if __name__ == '__main__':
-    from linadvtrain.solvers import lin_advtrain, get_radius
+    from linadvtrain.regression import lin_advregr, get_radius
 
     X, y = load_magic(input_folder='../WEBSITE/DATA')
 
@@ -31,7 +31,7 @@ if __name__ == '__main__':
     print(nmse_lasso)
 
     # Adversarial estimation
-    estimated_params, info = lin_advtrain(X_train, y_train, p=np.inf)
+    estimated_params, info = lin_advregr(X_train, y_train, p=np.inf)
     y_pred = X_test @ estimated_params
     nmse_advlinf = np.mean((y_test - y_pred) ** 2) / np.mean(y_test ** 2)
     print(nmse_advlinf)

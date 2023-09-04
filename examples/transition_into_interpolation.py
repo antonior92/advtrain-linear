@@ -6,7 +6,7 @@ from sklearn.linear_model import lasso_path
 from sklearn import datasets
 from sklearn import linear_model
 import tqdm
-from linadvtrain.solvers import lin_advtrain, get_radius
+from linadvtrain.regression import lin_advregr, get_radius
 import matplotlib
 matplotlib.use('webagg')
 
@@ -43,8 +43,8 @@ y = X @ beta + noise_std * e
 
 #%%
 ridge = lambda X, y, a: linear_model.Ridge(alpha=a, fit_intercept=False).fit(X, y).coef_
-advtrain_l2 = lambda X, y, a: lin_advtrain(X, y, adv_radius=a, p=2)[0]
-advtrain_linf = lambda X, y, a: lin_advtrain(X, y, adv_radius=a, p=np.inf)[0]
+advtrain_l2 = lambda X, y, a: lin_advregr(X, y, adv_radius=a, p=2)[0]
+advtrain_linf = lambda X, y, a: lin_advregr(X, y, adv_radius=a, p=np.inf)[0]
 
 def compute_coefs_path(estimator, amin, amax, n_alphas):
     alphas = np.logspace(np.log10(amin), np.log10(amax), n_alphas)

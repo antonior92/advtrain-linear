@@ -1,9 +1,9 @@
 import pytest
 import sklearn.datasets
-from linadvtrain import lin_advtrain
+from linadvtrain import lin_advregr
 from numpy import allclose
 import linadvtrain.cvxpy_impl as cvxpy_impl
-import linadvtrain.solvers as solvers
+import linadvtrain.regression as solvers
 import linadvtrain.datasets as datasets
 import numpy as np
 
@@ -74,7 +74,7 @@ def test_l2(adv_radius):
     X, y = get_data()
     n_train, n_params = X.shape
     # Test dimension
-    params, info = lin_advtrain(X, y, adv_radius=adv_radius, verbose=False, p=2, method='w-ridge')
+    params, info = lin_advregr(X, y, adv_radius=adv_radius, verbose=False, p=2, method='w-ridge')
     assert params.shape == (n_params,)
 
     # Compare with cvxpy
@@ -90,7 +90,7 @@ def test_l1(adv_radius, method):
     X, y = get_data()
     n_train, n_params = X.shape
     # Test dimension
-    params, info = lin_advtrain(X, y, adv_radius=adv_radius, verbose=False, utol=1e-200, max_iter=2000, p=np.inf, method=method)
+    params, info = lin_advregr(X, y, adv_radius=adv_radius, verbose=False, utol=1e-200, max_iter=2000, p=np.inf, method=method)
     assert params.shape == (n_params,)
 
     # Compare with cvxpy
@@ -108,7 +108,7 @@ def test_l1_diabetes(adv_radius):
     X, y = get_diabetes()
     n_train, n_params = X.shape
     # Test dimension
-    params, info = lin_advtrain(X, y, adv_radius=adv_radius, verbose=False, p=np.inf, method='w-sqlasso')
+    params, info = lin_advregr(X, y, adv_radius=adv_radius, verbose=False, p=np.inf, method='w-sqlasso')
     assert params.shape == (n_params,)
 
     # Compare with cvxpy
@@ -123,17 +123,17 @@ def test_l1_diabetes_zero():
     X, y = get_diabetes()
     n_train, n_params = X.shape
     # Test if adv_radius='zeros' produce zero solution
-    params, info = lin_advtrain(X, y, adv_radius='zero', p=np.inf, method='w-ridge', max_iter=10000)
+    params, info = lin_advregr(X, y, adv_radius='zero', p=np.inf, method='w-ridge', max_iter=10000)
     assert allclose(params, np.zeros_like(params),  atol=1e-2)  # note: the convergence seems to be slow here, that is why the high atol
 
     # Test if adv_radius>solvers.get_radius(X, y, 'zero', p=p) produce zero solution
     adv_radius = solvers.get_radius(X, y, 'zero', p=np.inf) + 0.1
-    params, info = lin_advtrain(X, y, adv_radius=adv_radius,  p=np.inf, max_iter=1000)
+    params, info = lin_advregr(X, y, adv_radius=adv_radius, p=np.inf, max_iter=1000)
     assert allclose(params, np.zeros_like(params),  rtol=1e-8, atol=1e-8)
 
     # Test if adv_radius < solvers.get_radius(X, y, 'zero', p=p) produce non-zero solution
     adv_radius = solvers.get_radius(X, y, 'zero', p=np.inf) - 0.1
-    params, info = lin_advtrain(X, y, adv_radius=adv_radius, p=np.inf, max_iter=1000)
+    params, info = lin_advregr(X, y, adv_radius=adv_radius, p=np.inf, max_iter=1000)
     assert not allclose(params, np.zeros_like(params),  rtol=1e-8, atol=1e-8)
 
 

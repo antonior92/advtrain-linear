@@ -1,4 +1,4 @@
-from linadvtrain.solvers import lin_advtrain, get_radius
+from linadvtrain.regression import lin_advregr, get_radius
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -11,7 +11,7 @@ def one_dimensional(adv_radius=0.05):
     y = x + noise
 
     # Adversarial estimation
-    estimated_params, info = lin_advtrain(x[:, None], y, adv_radius=adv_radius)
+    estimated_params, info = lin_advregr(x[:, None], y, adv_radius=adv_radius)
 
     # Plot dataset
     x_probe = np.linspace(0, 1, 100)

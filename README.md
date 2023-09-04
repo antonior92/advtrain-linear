@@ -18,8 +18,9 @@ $$\min_\beta \frac{1}{n} \sum_{i=1}^n \max_{||\Delta x_i|| \le \delta} (y_i - \b
 
 ## Usage
 ### One dimensional example
+
 ```python
-from linadvtrain.solvers import lin_advtrain
+from linadvtrain.regression import lin_advregr
 import numpy as np
 
 # Generate dataset
@@ -30,7 +31,7 @@ y = x + noise
 
 # Adversarial estimation
 adv_radius = 0.05
-estimated_params, info = lin_advtrain(X, y, adv_radius=adv_radius)
+estimated_params, info = lin_advregr(X, y, adv_radius=adv_radius)
 ```
 
 The image ilustrate the adversarial training the output of the example above, with the adversarial radius
@@ -42,11 +43,11 @@ being highlighted as error bars.  See [examples/one_dimensional.py](examples/one
 ### Multi-dimensional example
 Bellow we illustrate one example using diabetes dataset. When `p = 2` we are computing the $\ell_2$ adversarial training,
 and when `p = np.inf` we are computing the $\ell_\infty$ adversarial training. Since adv_radius is not set,
-the default value is used. 
+the default value is used.
 
 ```python
 import numpy as np
-from linadvtrain.solvers import lin_advtrain
+from linadvtrain.regression import lin_advregr
 from sklearn import datasets
 
 X, y = datasets.load_diabetes(return_X_y=True)
@@ -55,10 +56,10 @@ X -= X.mean(axis=0)
 X /= X.std(axis=0)
 
 # Compute l2adversarial training
-estim_param, info = lin_advtrain(X, y, p=2)
+estim_param, info = lin_advregr(X, y, p=2)
 
 # Compute linf adversarial training
-estim_param, info = lin_advtrain(X, y, p=np.inf)
+estim_param, info = lin_advregr(X, y, p=np.inf)
 ```
 
 

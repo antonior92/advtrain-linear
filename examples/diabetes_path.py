@@ -5,8 +5,8 @@ from sklearn.linear_model import lasso_path
 from sklearn import datasets
 from sklearn import linear_model
 import tqdm
-from linadvtrain.solvers import lin_advtrain
-from linadvtrain.solvers import get_radius
+from linadvtrain.regression import lin_advregr
+from linadvtrain.regression import get_radius
 
 
 def get_lasso_path(X, y, eps_lasso=1e-5):
@@ -50,14 +50,14 @@ def diabetes_path():
     plot_coefs(alphas_ridge, coefs_ridge, ax)
 
     fig, ax = plt.subplots(num='advtrain_l2')
-    estimator = lambda X, y, a:  lin_advtrain(X, y, adv_radius=a, p=2)
+    estimator = lambda X, y, a:  lin_advregr(X, y, adv_radius=a, p=2)
     alphas_adv, coefs_advtrain_l2, info_l2 = get_path(X, y, estimator, 1e1)
     plot_coefs(alphas_adv, coefs_advtrain_l2, ax)
     ax.plot(1/get_radius(X, y, 'zero', p=2), 0, 'o', ms=10, color='black')
     ax.axvline(1/get_radius(X, y, 'randn_zero', p=2))
 
     fig, ax = plt.subplots(num='advtrain_linf')
-    estimator = lambda X, y, a:  lin_advtrain(X, y, adv_radius=a, p=np.inf)
+    estimator = lambda X, y, a:  lin_advregr(X, y, adv_radius=a, p=np.inf)
     alphas_adv, coefs_advtrain_linf, info_linf = get_path(X, y, estimator, 1e1)
     plot_coefs(alphas_adv, coefs_advtrain_linf, ax)
     ax.plot(1/get_radius(X, y, 'zero', p=np.inf), 0, 'o', ms=10, color='black')

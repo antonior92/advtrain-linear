@@ -128,8 +128,8 @@ def get_radius(X, y, option, p):
         raise ValueError(f'option {option} not recognized')
 
 
-def lin_advtrain(X, y, adv_radius=None, max_iter=100, verbose=False,
-                 p=2, method='w-ridge', utol=1e-12, solver_params=None):
+def lin_advregr(X, y, adv_radius=None, max_iter=100, verbose=False,
+                p=2, method='w-ridge', utol=1e-12, solver_params=None):
     """Return the adversarial radius for which the zero solution is optimal.
 
     Parameters
