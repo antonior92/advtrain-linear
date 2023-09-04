@@ -54,8 +54,8 @@ X, y = datasets.load_diabetes(return_X_y=True)
 X -= X.mean(axis=0)
 X /= X.std(axis=0)
 
-# Compute linf adversarial training
-estim_param, info = lin_advtrain(X, y, p=np.inf)
+# Compute l2adversarial training
+estim_param, info = lin_advtrain(X, y, p=2)
 
 # Compute linf adversarial training
 estim_param, info = lin_advtrain(X, y, p=np.inf)
