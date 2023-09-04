@@ -1,6 +1,6 @@
 import numpy as np
 from sklearn.linear_model._ridge import _ridge_regression
-from .cvxpy_impl import MinimumNorm
+from linadvtrain.cvxpy_impl.regression import MinimumNorm
 
 
 def ridge(X, y, reg, *args, **kwargs):

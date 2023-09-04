@@ -2,9 +2,8 @@ import pytest
 import sklearn.datasets
 from linadvtrain import lin_advregr
 from numpy import allclose
-import linadvtrain.cvxpy_impl as cvxpy_impl
+import linadvtrain.cvxpy_impl.regression as cvxpy_impl
 import linadvtrain.regression as solvers
-import linadvtrain.datasets as datasets
 import numpy as np
 
 
