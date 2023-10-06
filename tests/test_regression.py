@@ -2,7 +2,7 @@ import pytest
 import sklearn.datasets
 from linadvtrain import lin_advregr
 from numpy import allclose
-import linadvtrain.cvxpy_impl.regression as cvxpy_impl
+import linadvtrain.cvxpy_impl as cvxpy_impl
 import linadvtrain.regression as solvers
 import numpy as np
 
@@ -77,7 +77,7 @@ def test_l2(adv_radius):
     assert params.shape == (n_params,)
 
     # Compare with cvxpy
-    mdl = cvxpy_impl.AdversarialTraining(X, y, p=2)
+    mdl = cvxpy_impl.AdversarialRegression(X, y, p=2)
     params_cvxpy = mdl(adv_radius=adv_radius, verbose=False)
     assert allclose(params_cvxpy, params,  rtol=1e-8, atol=1e-6)
 
@@ -93,7 +93,7 @@ def test_l1(adv_radius, method):
     assert params.shape == (n_params,)
 
     # Compare with cvxpy
-    mdl = cvxpy_impl.AdversarialTraining(X, y, p=np.inf)
+    mdl = cvxpy_impl.AdversarialRegression(X, y, p=np.inf)
     params_cvxpy = mdl(adv_radius=adv_radius, verbose=False)
     print(np.linalg.norm(params_cvxpy - params))
     print(params_cvxpy, params)
@@ -111,7 +111,7 @@ def test_l1_diabetes(adv_radius):
     assert params.shape == (n_params,)
 
     # Compare with cvxpy
-    mdl = cvxpy_impl.AdversarialTraining(X, y, p=np.inf)
+    mdl = cvxpy_impl.AdversarialRegression(X, y, p=np.inf)
     params_cvxpy = mdl(adv_radius=adv_radius, verbose=False)
     assert allclose(params_cvxpy, params,  rtol=1e-8, atol=1e-8)
 
@@ -134,7 +134,6 @@ def test_l1_diabetes_zero():
     adv_radius = solvers.get_radius(X, y, 'zero', p=np.inf) - 0.1
     params, info = lin_advregr(X, y, adv_radius=adv_radius, p=np.inf, max_iter=1000)
     assert not allclose(params, np.zeros_like(params),  rtol=1e-8, atol=1e-8)
-
 
 
 if __name__ == '__main__':

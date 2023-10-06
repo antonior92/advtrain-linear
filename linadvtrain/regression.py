@@ -1,6 +1,6 @@
 import numpy as np
 from sklearn.linear_model._ridge import _ridge_regression
-from linadvtrain.cvxpy_impl.regression import MinimumNorm
+from linadvtrain.cvxpy_impl import MinimumNorm
 
 
 def ridge(X, y, reg, *args, **kwargs):
@@ -130,7 +130,7 @@ def get_radius(X, y, option, p):
 
 def lin_advregr(X, y, adv_radius=None, max_iter=100, verbose=False,
                 p=2, method='w-ridge', utol=1e-12, solver_params=None):
-    """Return the adversarial radius for which the zero solution is optimal.
+    """Linear adversarial regression.
 
     Parameters
     ----------

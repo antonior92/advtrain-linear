@@ -13,7 +13,7 @@ def compute_q(p):
     return q
 
 
-class AdversarialTraining:
+class AdversarialRegression:
     def __init__(self, X, y, p):
         m, n = X.shape
         q = compute_q(p)
@@ -63,8 +63,6 @@ class SqLasso:
         return v
 
 
-
-
 class MinimumNorm():
     def __init__(self, X, y, p, **kwargs):
         ntrain, nfeatures = X.shape
@@ -89,3 +87,40 @@ class MinimumNorm():
 
     def adv_radius(self):
         return 1 / (self.ntrain * np.max(np.abs(self.alpha)))
+
+
+
+class AdversarialClassification:
+    def __init__(self, X, y, p=2, loss='logistic', weight_decay=0):
+        # convert y to +1 or - 1
+        y = 2 * y - 1
+
+        if loss == 'logistic':
+            l = lambda x: cp.logistic(-x)
+        elif loss == 'hinge':
+            l = lambda x: cp.pos(1 - x)
+        m, n = X.shape
+        q = compute_q(p)
+        # Formulate problem
+        param = cp.Variable(n)
+        param_norm = cp.pnorm(param, p=q)
+        adv_radius = cp.Parameter(name='adv_radius', nonneg=True)
+        class_error = cp.multiply(y, X @ param)
+
+        adv_loss = 1 / m * cp.sum(l(class_error - adv_radius * param_norm)) + weight_decay/2 * cp.pnorm(param, p=2) ** 2
+        prob = cp.Problem(cp.Minimize(adv_loss))
+        adv_radius.value = 0.1
+        prob.solve()
+        self.prob = prob
+        self.adv_radius = adv_radius
+        self.param = param
+        self.warm_start = False
+
+    def __call__(self, adv_radius, **kwargs):
+        try:
+            self.adv_radius.value = adv_radius
+            self.prob.solve(warm_start=self.warm_start, **kwargs)
+            v = self.param.value
+        except:
+            v = np.zeros(self.param.shape)
+        return v
