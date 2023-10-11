@@ -9,20 +9,19 @@ import matplotlib
 matplotlib.use('webagg')
 import tqdm
 from linadvtrain.cvxpy_impl import compute_q
+from linadvtrain.solve_piecewise_lineq import solve_piecewise_lineq, pos
 
 
+def soft_threshold(x, threshold):
+    return np.sign(x) * pos(np.abs(x) - threshold)
 
 
-
-#  Implement gradiend descent in adversarial training
+#  Implement gradient descent in adversarial training
 def projection(param, max_norm, p=2):
     """Euclidean projection into the set {(param, max_norm) | ||param||_q <= max_norm}
 
     The solution to the optimization problem:
         min_(x,t) ||param - x||_2^2  + (max_norm - t)^2  s.t. ||x||_q <= t
-    the solution in this case is:
-        t = (||param||_2^2 * ||param||_q + ||param||_q^2 * max_norm) / (||param||_2^2 + ||param||_q^2)
-        x = param * t / ||param||_q
     """
     norm_dual = np.linalg.norm(param, ord=compute_q(p))
     if norm_dual > max_norm:
@@ -31,16 +30,8 @@ def projection(param, max_norm, p=2):
             new_param = param * new_max_norm / norm_dual
             return new_param, np.abs(new_max_norm)
         elif p == np.inf:
-            new_param = np.zeros_like(param)
-            diff = norm_dual - max_norm
-
-            index = diff < param
-            new_param[index] = param[index] - diff
-
-            index = diff > -param
-            new_param[index] = param[index] - diff
-
-            return new_param
+            threshold = solve_piecewise_lineq(param, max_norm)
+            return soft_threshold(param, threshold), max_norm / (1 - threshold)
 
     else:
         return param, max_norm
@@ -75,7 +66,6 @@ class CostFunction:
         else:
             grad_max_norm = 1 / self.n_train * self.adv_radius * np.sum(1 - aux)
             return grad_param, grad_max_norm
-
 
 
 def lin_advclasif(X, y, adv_radius=None, max_iter=100000, verbose=False,
