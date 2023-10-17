@@ -36,14 +36,12 @@ def solve_piecewise_lineq(coefs, t):
     # Evaluate  the functions fi and g in  in each breakpoint
     # Find the fist value for each fi(b[i]) < g(b[i]) and b[i]
     # the intersection will happen in the line segment corresponding to it
-    if t >= 0:
-        index = np.sum((-m * b + c > t / (1 - b)) & (b > 0))
+    index = np.sum((-m * b + c) > (t + b))
+    # solve the equation (-m[i] * x + c[i]) = (x + t)
+    if index < len(b):
+        s = (c[index] - t) / (m[index] + 1)
     else:
-        index=0
-
-    # solve the equation fi(x) = g(x) for i = index.
-    # select the smallest solution
-    s = solve_quadratic_equation(m[index], -(m[index]+c[index]), c[index]-t)[1]
+        s = - t
     return s
 
 
@@ -56,18 +54,20 @@ def compute_lhs(coefs,  s):
 
 def compute_rhs(t, s):
     s = np.atleast_1d(s)
-    rhs = np.where(s != 1, t / (1 - s), np.Inf)
+    rhs = t + s
     return rhs
 
-# TODO: think of the casse t is negative and t == 0? what should we do?
+
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
     coefs = np.array([1, 2, 3])
 
-    b = np.array([1, 2, 4])
-    t = - 0.1 * np.sum(b)
+    b = np.array([1, 2, 3])
+    t = -1 * np.sum(b)
 
-    l = np.linspace(0, max(b), 50)
+    l = np.linspace(0, max([max(b), -t]), 50)
+
+    s = solve_piecewise_lineq(coefs, t)
 
     #s = solve_piecewise_lineq(coefs, t)
 
@@ -75,6 +75,6 @@ if __name__ == "__main__":
 
     plt.plot(l, compute_lhs(coefs, l))
     plt.plot(l, compute_rhs(t, l))
-    #plt.plot(s, t / (1 - s), 's')
-    plt.ylim(-0.1, 1.5* sum(np.abs(coefs)))
+    plt.plot(s, t + s , 's')
+    plt.ylim(min(-0.1, 1.1*t), 1.5* sum(np.abs(coefs)))
     plt.show()

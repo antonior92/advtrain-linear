@@ -63,8 +63,6 @@ def test_linf(adv_radius):
     mdl = cvxpy_impl.AdversarialClassification(X, y, p=p)
     params_cvxpy = mdl(adv_radius=adv_radius, verbose=False)
     print(params, params_cvxpy)
-    print(np.linalg.norm(params, ord=1))
-    print(np.linalg.norm(params_cvxpy, ord=1))
 
     cost = CostFunction(X, y, adv_radius, p)
     print(cost.compute_cost(params))

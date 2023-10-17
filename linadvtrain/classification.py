@@ -31,7 +31,7 @@ def projection(param, max_norm, p=2):
             return new_param, np.abs(new_max_norm)
         elif p == np.inf:
             threshold = solve_piecewise_lineq(param, max_norm)
-            return soft_threshold(param, threshold), max_norm / (1 - threshold)
+            return soft_threshold(param, threshold), max_norm + threshold
 
     else:
         return param, max_norm
@@ -89,6 +89,7 @@ def lin_advclasif(X, y, adv_radius=None, max_iter=100000, verbose=False,
         # Compute update using momentum (for momentum = 0 we just recover gd)
         update_param = momentum * update_param - lr * grad_param
         update_max_norm = momentum * update_max_norm - lr * grad_max_norm
+        # Do updates
         new_w, new_t = projection(w + update_param, t + update_max_norm, p=p)
         update_size = np.sqrt(np.linalg.norm(new_w - w) ** 2 + np.linalg.norm(new_t - t) ** 2)
         if verbose and i % 1000 == 0:
