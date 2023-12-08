@@ -109,5 +109,5 @@ def lin_advclasif(X, y, adv_radius=None, max_iter=100000, verbose=False,
 #   1. [x] Add acceleration. It will make it faster and easier to check for discrepancies.
 #   2. [x] Refactor and move this to test file...
 #   3. [ ] The projection condition is wrong for the linf norm
-#   5. [ ] Add condition to verify optimality based on gradient (it could be useful to check for multiple solutions, and compare the solutions when they are different)
+#   5. [ ] Add condition to verify optimality based on suboptimality
 #   4. [ ] Convert the inner loop to  C based.. It will also make it faster
