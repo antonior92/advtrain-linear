@@ -1,5 +1,5 @@
-- Maybe unify cvxpy call under the same interface as linadvtrain
-- Add more termination criteria for linadvtrain (ftol, gtol, xtol, maxiter...)
-- Add diabetes example plot to readme
-- Add advantages in readme
-- Test default parameter for linadvtrain
+- [x] Refactor sgd_logistic
+- [ ] Implement Lipschitz sampling
+- [ ] Refactor classification.py porting the GD implementation to a separate file
+- [ ] Add time benchmark
+- [ ] Change the implementation to cython
