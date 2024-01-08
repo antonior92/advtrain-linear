@@ -6,6 +6,7 @@
 import numpy as np
 import cvxpy as cp
 
+
 class DualFeasible(object):
     def __init__(self, A, pnorm):
         self.A = A

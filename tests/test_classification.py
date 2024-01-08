@@ -34,6 +34,7 @@ def test_l2(adv_radius):
     print(params_cvxpy, params)
     assert allclose(params_cvxpy, params, rtol=1e-8, atol=1e-2)
 
+
 @pytest.mark.parametrize("adv_radius", [0.1])
 def test_l2_largemomentum(adv_radius):
     # Generate data
@@ -48,6 +49,7 @@ def test_l2_largemomentum(adv_radius):
     params_cvxpy = mdl(adv_radius=adv_radius, verbose=False)
     print(params_cvxpy, params)
     assert allclose(params_cvxpy, params, rtol=1e-8, atol=1e-2)
+
 
 @pytest.mark.parametrize("adv_radius", [0.2])
 def test_linf(adv_radius):
@@ -65,8 +67,9 @@ def test_linf(adv_radius):
     print(params, params_cvxpy)
 
     cost = CostFunction(X, y, adv_radius, p)
-    print(cost.compute_cost(params))
-    print(cost.compute_cost(params_cvxpy))
 
     assert allclose(params_cvxpy, params, rtol=1e-8, atol=1e-6)
 
+
+if __name__ == '__main__':
+    pytest.main()

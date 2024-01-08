@@ -1,9 +1,9 @@
 import numpy as np
 
 
-
 def pos(x):
     return np.maximum(x, 0)
+
 
 def solve_quadratic_equation(aa, bb, cc):
     """Solve quadratic equation
