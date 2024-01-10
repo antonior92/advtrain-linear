@@ -1,7 +1,7 @@
 # %% Imports
 import numpy as np
 from sklearn import linear_model
-from linadvtrain.first_order_methods import gd, sgd
+from linadvtrain._first_order_methods import gd, sgd
 
 sigmoid = lambda x: 1 / (1 + np.exp(-x))
 

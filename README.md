@@ -16,6 +16,18 @@ Given pair of input-output samples $(x_i, y_i), i = 1, \dots, n$, it is formulat
 
 $$\min_\beta \frac{1}{n} \sum_{i=1}^n \max_{||\Delta x_i|| \le \delta} (y_i - \beta^\top(x_i+ \Delta x_i))^2$$
 
+# Installation
+
+Move into the downloaded directory and install requirements with:
+```bash
+pip install -r requirements.txt
+```
+
+In sequence, install package with:
+```bash
+python setup.py install
+```
+
 ## Usage
 ### One dimensional example
 

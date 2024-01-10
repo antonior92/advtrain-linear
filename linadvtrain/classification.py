@@ -4,6 +4,7 @@ from linadvtrain.cvxpy_impl import compute_q
 from linadvtrain.solve_piecewise_lineq import solve_piecewise_lineq, pos
 from linadvtrain.first_order_methods import gd
 
+
 def soft_threshold(x, threshold):
     return np.sign(x) * pos(np.abs(x) - threshold)
 
@@ -48,7 +49,6 @@ class CostFunction:
         self.adv_radius = adv_radius
         self.q = compute_q(p)
         self.n_params = self.V.shape[1]
-
 
     def compute_aux(self, w, t):
         return sigmoid(self.V @ w - self.adv_radius * t)

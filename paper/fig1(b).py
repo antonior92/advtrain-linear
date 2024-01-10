@@ -60,7 +60,7 @@ if __name__ == "__main__":
     X_train_, X_test_, y_train, y_test = normalize(X_train_, X_test_, y_train, y_test)
 
     if load_data:
-        df = pd.read_csv('fig1(b).csv')
+        df = pd.read_csv('data/fig1(b).csv')
     else:
         df = pd.DataFrame({'method': [], 'n_params': [], 'time': []})
     for n_params in []:
