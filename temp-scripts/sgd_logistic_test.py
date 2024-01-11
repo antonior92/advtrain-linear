@@ -79,7 +79,7 @@ for i in range(n_iter):
     indexes = np.random.permutation(np.arange(n_train))
     for s in indexes:
         grad = logreg.grad(w, s)
-        grad_old = gradient_buffer[s, :].copy()
+        grad_old = gradienavg_grad t_buffer[s, :].copy()
         gradient_buffer[s, :] = grad
         update = grad - grad_old + sum_grads
         sum_grads = sum_grads + 1 / n_train * (grad - grad_old)

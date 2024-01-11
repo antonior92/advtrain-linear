@@ -25,7 +25,7 @@ def test_l2(adv_radius):
     X, y = get_data()
     n_train, n_params = X.shape
     # Test dimension
-    params, info = lin_advclasif(X, y, adv_radius=adv_radius, verbose=False, p=2, momentum=0.2, nesterov=True)
+    params, info = lin_advclasif(X, y, adv_radius=adv_radius, verbose=False, p=2, momentum=0.2, nesterov=True, max_iter=100000)
     assert params.shape == (n_params,)
 
     # Compare with cvxpy
@@ -41,7 +41,7 @@ def test_l2_largemomentum(adv_radius):
     X, y = get_data()
     n_train, n_params = X.shape
     # Test dimension
-    params, info = lin_advclasif(X, y, adv_radius=adv_radius, verbose=True, p=2, momentum=0.8, utol=1e-20, nesterov=True)
+    params, info = lin_advclasif(X, y, adv_radius=adv_radius, verbose=True, p=2, momentum=0.8, utol=1e-20, nesterov=True, max_iter=100000)
     assert params.shape == (n_params,)
 
     # Compare with cvxpy
@@ -58,7 +58,7 @@ def test_linf(adv_radius):
     p = np.inf
     n_train, n_params = X.shape
     # Test dimension
-    params, info = lin_advclasif(X, y, adv_radius=adv_radius, verbose=True, p=p, lr=1, momentum=0.8, utol=1e-20, nesterov=True)
+    params, info = lin_advclasif(X, y, adv_radius=adv_radius, verbose=False, p=p, lr=1, momentum=0.8, utol=1e-20, nesterov=True, max_iter=100000)
     assert params.shape == (n_params,)
 
     # Compare with cvxpy

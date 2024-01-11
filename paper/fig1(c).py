@@ -43,19 +43,19 @@ if __name__ == '__main__':
     n_train, n_params = X.shape
     # Test dimension
     start_time = time.time()
-    params, info = lin_advclasif(X, y, adv_radius=adv_radius, verbose=False, p=2, momentum=0.2, nesterov=True)
+    params, info = lin_advclasif(X, y, adv_radius=adv_radius, verbose=False, p=np.inf, momentum=0.2, nesterov=True, max_iter=100)
     exec_time = time.time() - start_time
     print(exec_time)
     assert params.shape == (n_params,)
 
     # Compare with cvxpy
     start_time = time.time()
-    mdl = cvxpy_impl.AdversarialClassification(X, y, p=2)
+    mdl = cvxpy_impl.AdversarialClassification(X, y, p=np.inf)
     params_cvxpy = mdl(adv_radius=adv_radius, verbose=False)
     exec_time = time.time() - start_time
     print(exec_time)
 
     import cProfile
 
-    cProfile.run("lin_advclasif(X, y, adv_radius=adv_radius, verbose=False, p=2, momentum=0.2, nesterov=True)")
+    cProfile.run("lin_advclasif(X, y, adv_radius=adv_radius, verbose=False, p=np.inf, momentum=0.2, nesterov=True)")
 
