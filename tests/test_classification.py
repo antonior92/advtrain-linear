@@ -71,5 +71,41 @@ def test_linf(adv_radius):
     assert allclose(params_cvxpy, params, rtol=1e-8, atol=1e-6)
 
 
+# -------- Lin Adv train --------- #
+@pytest.mark.parametrize("adv_radius", [0.1])
+def test_l2_sgd(adv_radius):
+    # Generate data
+    X, y = get_data()
+    n_train, n_params = X.shape
+    print(n_train)
+    # Test dimension
+    params, info = lin_advclasif(X, y, adv_radius=adv_radius, lr=100000.0, method='sgd', max_iter=1000, verbose=True, p=2, batch_size=200)  # Something is very wrong with the LR!!
+    assert params.shape == (n_params,)
+
+    # Compare with cvxpy
+    mdl = cvxpy_impl.AdversarialClassification(X, y, p=2)
+    params_cvxpy = mdl(adv_radius=adv_radius, verbose=False)
+    print(params_cvxpy, params)
+    assert allclose(params_cvxpy, params, rtol=1e-1, atol=1e-1)
+
+
+# -------- Lin Adv train --------- #
+@pytest.mark.parametrize("adv_radius", [0.1])
+def test_l2_saga(adv_radius):
+    # Generatdata
+    X, y = get_data()
+    n_train, n_params = X.shape
+    # Test dimension
+    params, info = lin_advclasif(X, y, adv_radius=adv_radius, lr=100000.0, method='saga', max_iter=100, verbose=True, p=2, batch_size=2)  # Something is very wrong with the LR!!
+    assert params.shape == (n_params,)
+
+    # Compare with cvxpy
+    mdl = cvxpy_impl.AdversarialClassification(X, y, p=2)
+    params_cvxpy = mdl(adv_radius=adv_radius, verbose=False)
+    print(params_cvxpy, params)
+    assert allclose(params_cvxpy, params, rtol=1e-2, atol=1e-2)
+
+
+
 if __name__ == '__main__':
     pytest.main()

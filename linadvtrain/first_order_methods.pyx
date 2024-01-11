@@ -37,7 +37,7 @@ def gd(np.ndarray[np.float64_t, ndim=1] w0,  object compute_grad,  object prox =
 
 
 def sgd(np.ndarray[np.float64_t, ndim=1] w0,  object compute_grad,  int n_train, int batch_size=1,
-        object prox = None, object callback=None,  int max_iter=10000, float lr=1.0, nesterov=False,
+        object prox = None, object callback=None,  int max_iter=100, float lr=1.0, nesterov=False,
         float momentum=0.0,  float utol=1e-12, int every_ith=1):
     if prox is None:
        prox = identity
@@ -90,6 +90,7 @@ def saga(np.ndarray[np.float64_t, ndim=1] w0, object compute_jac, int n_train, i
     cdef np.ndarray[long, ndim = 1] indexes_batch = np.zeros(batch_size, dtype=long)
     cdef int i, s
     cdef int n_batches = n_train // batch_size
+    cdef double update_size  = 0.0
 
     for i in range(max_iter):
         for s in range(n_batches):
