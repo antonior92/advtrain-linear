@@ -59,7 +59,7 @@ def sgd(np.ndarray[np.float64_t, ndim=1] w0,  object compute_grad,  int n_train,
             else:
                 grad = compute_grad(w, indexes_batch)
             # Compute update using momentum (for momentum = 0 we just recover gd)
-            update_param = momentum * update_param - lr / n_train * grad
+            update_param = momentum * update_param - lr * grad
             # Do updates
             new_w = prox(w + update_param)
             update_size = np.linalg.norm(new_w - w)
@@ -70,6 +70,7 @@ def sgd(np.ndarray[np.float64_t, ndim=1] w0,  object compute_grad,  int n_train,
             break
         indexes = np.random.permutation(np.arange(n_train))
     return w
+
 
 def saga(np.ndarray[np.float64_t, ndim=1] w0, object compute_jac, int n_train, int batch_size=1,
          object prox = None, object callback=None, int max_iter=10000, float lr=1.0,
@@ -100,7 +101,7 @@ def saga(np.ndarray[np.float64_t, ndim=1] w0, object compute_jac, int n_train, i
             update = (1 / batch_size * (jac_new - jac_old).sum(axis=0) + avg_grad)
             avg_grad += 1 / n_train * (jac_new - jac_old).sum(axis=0)
             # Do updates
-            new_w = prox(w - lr / n_batches * update)
+            new_w = prox(w - lr  * update)
             update_size = np.linalg.norm(new_w - w)
             w = new_w
             jac[indexes_batch, :] = jac_new

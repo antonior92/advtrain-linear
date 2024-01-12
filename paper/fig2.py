@@ -9,7 +9,6 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn import datasets
 import matplotlib
-matplotlib.use('webagg')
 from linadvtrain.classification import lin_advclasif, CostFunction
 import numpy as np
 import linadvtrain.cvxpy_impl as cvxpy_impl
@@ -20,13 +19,15 @@ plt.style.use(['mystyle.mpl'])
 
 # Additional style
 mpl.rcParams['figure.figsize'] = 7, 3
-mpl.rcParams['figure.subplot.bottom'] = 0.15
+
+mpl.rcParams['figure.subplot.left'] = 0.17
+mpl.rcParams['figure.subplot.bottom'] = 0.23
 mpl.rcParams['figure.subplot.right'] = 0.99
 mpl.rcParams['figure.subplot.top'] = 0.95
 mpl.rcParams['font.size'] = 22
-mpl.rcParams['legend.fontsize'] = 20
+mpl.rcParams['legend.fontsize'] = 18
 mpl.rcParams['legend.handlelength'] = 1
-mpl.rcParams['legend.handletextpad'] = 0.01
+mpl.rcParams['legend.handletextpad'] = 0.1
 mpl.rcParams['xtick.major.pad'] = 7
 
 
@@ -41,13 +42,6 @@ y = np.asarray(y, dtype=np.float64)
 if __name__ == '__main__':
     adv_radius = 0.1
     n_train, n_params = X.shape
-    # Test dimension
-    start_time = time.time()
-    params, info = lin_advclasif(X, y, adv_radius=adv_radius, verbose=False, p=np.inf, momentum=0.2, nesterov=True, max_iter=100)
-    exec_time = time.time() - start_time
-    print(exec_time)
-    assert params.shape == (n_params,)
-
     # Compare with cvxpy
     start_time = time.time()
     mdl = cvxpy_impl.AdversarialClassification(X, y, p=np.inf)
@@ -55,7 +49,36 @@ if __name__ == '__main__':
     exec_time = time.time() - start_time
     print(exec_time)
 
+
+    # Test dimension
+    n_iter = 1000
+    lr_list = [1, 10, 100, 200]
+    dist_gd = np.empty([len(lr_list), n_iter])
+    dist_gd[:] = np.nan
+    for ll, lr in enumerate(lr_list):
+        def callback(i, w, update_size):
+            dist_gd[ll, i] = np.linalg.norm(w[:-1] - params_cvxpy)
+        start_time = time.time()
+        params, info = lin_advclasif(X, y, adv_radius=adv_radius,
+                                     callback=callback, verbose=False,
+                                     p=np.inf,
+                                     max_iter=n_iter, lr=lr)
+        exec_time = time.time() - start_time
+        print(exec_time)
+        assert params.shape == (n_params,)
+
     import cProfile
 
     cProfile.run("lin_advclasif(X, y, adv_radius=adv_radius, verbose=False, p=np.inf, momentum=0.2, nesterov=True)")
+
+    import matplotlib.pyplot as plt
+
+    plt.plot(dist_gd.T, label=['lr = 1', 'lr = 10', 'lr = 100', 'lr = 200'])
+    plt.yscale('log')
+    plt.legend()
+    plt.xlabel('\# iter')
+    plt.ylabel(r'$||\beta^{(i)} - \beta_*||$')
+    plt.savefig('imgs/fig2.pdf')
+    plt.show()
+
 

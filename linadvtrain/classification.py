@@ -61,6 +61,7 @@ class CostFunction:
         if indexes is None:
             Vi = self.V
         else:
+            indexes = np.random.permutation(indexes)
             Vi = self.V[indexes, :]
         aux = self.compute_aux(Vi, w, t)
         grad_param = - 1 / self.n_train * Vi.T @ (1 - aux)
@@ -74,12 +75,12 @@ class CostFunction:
         else:
             Vi = self.V[indexes, :]
         aux = self.compute_aux(Vi, w, t)
-        jac_param = - 1 / self.n_train * (Vi.T * (1 - aux)).T
-        jac_max_norm = 1 / self.n_train * self.adv_radius * (1 - aux)
+        jac_param = - (Vi.T * (1 - aux)).T
+        jac_max_norm = self.adv_radius * (1 - aux)
         return merge_params(jac_param, jac_max_norm[:, None])
 
 
-def lin_advclasif(X, y, adv_radius=None, p=2, verbose=False, method='gd', **kwargs):
+def lin_advclasif(X, y, adv_radius=None, p=2, verbose=False, method='gd', callback=None, **kwargs):
     """Linear adversarial classification """
     if adv_radius is None:
         adv_radius = 0.001
@@ -87,18 +88,22 @@ def lin_advclasif(X, y, adv_radius=None, p=2, verbose=False, method='gd', **kwar
     prox = lambda x: projection(x, p=p)
     w0 = np.zeros(cost.n_params + 1)
     if verbose:
-        def callback(i, w, update_size):
+        def new_callback(i, w, update_size):
             print(f'Iteration {i} | update size: {update_size:4.3e} | cost: {cost.compute_cost(w)} | ')
+            if callback is not None:
+                callback(i, w, update_size)
+
     else:
-        callback = None
+        new_callback = callback
+
     if method == 'gd':
-        w = gd(w0, cost.compute_grad, prox=prox, callback=callback, **kwargs)
+        w = gd(w0, cost.compute_grad, prox=prox, callback=new_callback, **kwargs)
     elif method == 'sgd':
         n_train = X.shape[0]
-        w = sgd(w0, cost.compute_grad, n_train, prox=prox, callback=callback, **kwargs)
+        w = sgd(w0, cost.compute_grad, n_train, prox=prox, callback=new_callback, **kwargs)
     elif method == 'saga':
         n_train = X.shape[0]
-        w = saga(w0, cost.compute_jac, n_train, prox=prox, callback=callback, **kwargs)
+        w = saga(w0, cost.compute_jac, n_train, prox=prox, callback=new_callback, **kwargs)
     param, t = split_params(w)
     return param, {}
 

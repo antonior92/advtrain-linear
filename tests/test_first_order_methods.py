@@ -45,10 +45,10 @@ def test_sgd_on_linear_regresion_with_minibatches():
     def grad(param, indexes):
         Xi = X[indexes, :]
         yi = y[indexes]
-        return Xi.T @ (Xi @ param - yi)
+        return 1 / X.shape[0] * Xi.T @ (Xi @ param - yi)
 
     for b in [1, 10, 100]:
-        p = sgd(np.zeros(10), grad, 100, batch_size=b, lr=0.01, max_iter=100)
+        p = sgd(np.zeros(10), grad, 100, batch_size=b, lr=0.001, max_iter=100)
         print(np.linalg.norm(p - param))
     allclose(p, param)
 
@@ -68,5 +68,5 @@ def test_saga_on_linear_regresion_with_minibatches():
         return JacT.T
 
     for b in [1, 10, 100]:
-        p = saga(np.zeros(10), compute_jac, 100, batch_size=b, lr=0.1, max_iter=100)
+        p = saga(np.zeros(10), compute_jac, 100, batch_size=b, lr=0.01, max_iter=100)
         print(np.linalg.norm(p-param))
