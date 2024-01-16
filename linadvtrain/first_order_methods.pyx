@@ -2,6 +2,7 @@ import cython
 import numpy as np
 cimport numpy as np
 
+
 def identity(np.ndarray[np.float64_t, ndim=1]  x):
     return x
 
@@ -111,3 +112,42 @@ def saga(np.ndarray[np.float64_t, ndim=1] w0, object compute_jac, int n_train, i
             break
         indexes = np.random.permutation(np.arange(n_train))
     return w
+
+def cg(object X, np.ndarray[np.float64_t, ndim=1] y,
+       np.ndarray[np.float64_t, ndim=1] param0=None,
+       int max_iter=0, object precond=None, float tol=1e-8):
+    """Use conjugate gradient to solve the linear system X @ param = y."""
+
+    n_params = X.shape[1]
+    if precond is None:
+        precond = identity
+
+    if max_iter == 0:
+        max_iter = n_params
+
+    cdef np.ndarray[np.float64_t, ndim=1]  param = np.zeros(n_params)
+    if param0 is not None:
+        param[:] = param0[:]
+
+    cdef np.ndarray[np.float64_t, ndim=1] resid = X.dot(param) - y
+    cdef np.ndarray[np.float64_t, ndim=1] update_d = -np.copy(resid)
+    cdef np.ndarray[np.float64_t, ndim=1] precond_resid = precond(resid)
+    cdef np.ndarray[np.float64_t, ndim=1] X_update_d = np.zeros(n_params)
+
+    cdef double alpha, beta, resid_sqnorm, resid_sqnorm_next
+
+    resid_sqnorm = resid.T @ precond_resid
+    for k in range(max_iter):
+        X_update_d = X.dot(update_d)
+        alpha = resid_sqnorm / (update_d.T @ X_update_d)
+        param = param + alpha * update_d
+        resid = resid + alpha * X_update_d
+        precond_resid = precond(resid)
+        resid_sqnorm_next = resid.T @ precond_resid
+        if resid_sqnorm_next < 1e-10:
+            break
+        beta = resid_sqnorm_next / resid_sqnorm
+        update_d = - precond_resid + beta * update_d
+        resid_sqnorm = resid_sqnorm_next
+
+    return param

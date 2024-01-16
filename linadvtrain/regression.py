@@ -1,11 +1,54 @@
 import numpy as np
 from sklearn.linear_model._ridge import _ridge_regression
 from linadvtrain.cvxpy_impl import MinimumNorm
+from linadvtrain.first_order_methods import cg
+from scipy.sparse.linalg import LinearOperator
 
-
-def ridge(X, y, reg, *args, **kwargs):
+def ridge(X, y, reg,  *args, **kwargs):
     """Ridge regression."""
     return _ridge_regression(X, y, reg, *args, **kwargs)
+
+
+class RidgeCG():
+    def __init__(self, X, y):
+        n_train, n_params = X.shape
+        self.X = X
+        self.y = y
+        self.n_params = n_params
+        self.n_train = n_train
+
+    def __call__(self, params0, reg, w_params=None, w_samples=None):
+        X = self.X
+        def f(param):
+            out = X.T @ (w_samples * (X @ param))
+            if w_params is None:
+                out += reg * param
+            else:
+                out += reg * w_params * param
+            return out
+        A = LinearOperator(matvec=f, shape=(self.n_params, self.n_params))
+        b = X.T @ (w_samples * self.y)
+
+        params_cg = cg(A, b, params0)
+
+        return params_cg, {}
+
+
+
+
+def ridge_cg(X, y, reg,  *args, **kwargs):
+    """Ridge regression using conjugate gradient."""
+    # Rewrite to avoid multiplying X.T @ X several times
+    n_train, n_params = X.shape
+    if n_params <= n_train:  # Use primal formulation
+        A = X.T @ X + reg * np.eye(n_params)
+        b = X.T @ y
+        params_cg = cg(A, b)
+    else:   # Use dual formualation
+        A = X @ X.T + 0.1 * np.eye(n_train)
+        b = y
+        params_cg = X.T @ cg(A, b)
+    return params_cg
 
 
 def compute_q(p):
@@ -147,7 +190,7 @@ def lin_advregr(X, y, adv_radius=None, max_iter=100, verbose=False,
     p : float, default=2
         Norm used for the adversarial radius. Use p=2 for the l2 norm,
         p=np.inf for the l_inf norm.
-    method : {'w-ridge', 'w-sqlasso'}, default='w-ridge'
+    method : {'w-ridge', 'w-sqlasso', 'w-cg'}, default='w-ridge'
         Method used for adversarial training.
     utol : float, default=1e-12
         Tolerance for the update size.
@@ -179,6 +222,8 @@ def lin_advregr(X, y, adv_radius=None, max_iter=100, verbose=False,
             solver_params = {'utol': 1e-12, 'max_iter': 10}
         elif method == 'w-ridge':
             solver_params = {}
+        elif method == 'w-cg':
+            ridge_ccg = RidgeCG(X, y)
     for i in range(max_iter):
         # ------- 1. Solve reweighted ridge regression ------
         reg = regul_correction * adv_radius ** 2
@@ -186,12 +231,14 @@ def lin_advregr(X, y, adv_radius=None, max_iter=100, verbose=False,
             params_, subprob_info = Reweighted(sq_lasso)(X, y, reg, w_samples=w_samples, w_params_warmstart=subprob_info.get('w_params', None), **solver_params)
         elif method == 'w-ridge':
             params_, subprob_info = Reweighted(ridge)(X, y, reg, w_samples=w_samples, w_params=w_params, **solver_params)
+        elif method == 'w-cg':
+            params_, subprob_info = ridge_ccg(params, reg, w_samples=w_samples, w_params=w_params)
 
         # ------- 2. Perform eta trick  -------
         abs_error = np.abs(X @ params_ - y)
         q = compute_q(p)
         param_norm = np.linalg.norm(params_, ord=q)
-        if p == np.inf and method == 'w-ridge':
+        if p == np.inf and method in ['w-ridge', 'w-cg']:
             M = np.abs([abs_error, *[adv_radius * p * np.ones(n_train) for p in params_]])
             c = eta_trick(M)
             w_params = np.sum(c[1:], axis=1)

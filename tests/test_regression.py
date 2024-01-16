@@ -135,6 +135,21 @@ def test_l1_diabetes_zero():
     params, info = lin_advregr(X, y, adv_radius=adv_radius, p=np.inf, max_iter=1000)
     assert not allclose(params, np.zeros_like(params),  rtol=1e-8, atol=1e-8)
 
+def test_l1_cg():
+    # Generate data
+    adv_radius = 0.01
+    X, y = get_data()
+    n_train, n_params = X.shape
+    # Test dimension
+    params, info = lin_advregr(X, y, adv_radius=adv_radius, verbose=False, utol=1e-200, max_iter=5000, p=np.inf, method='w-cg')
+    assert params.shape == (n_params,)
+
+    # Compare with cvxpy
+    mdl = cvxpy_impl.AdversarialRegression(X, y, p=np.inf)
+    params_cvxpy = mdl(adv_radius=adv_radius, verbose=False)
+
+    assert allclose(params_cvxpy, params,  rtol=1e-8, atol=1e-8)
+
 
 if __name__ == '__main__':
     pytest.main()
