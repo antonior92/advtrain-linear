@@ -88,6 +88,8 @@ if __name__ == "__main__":
             'time': exec_time}, ignore_index=True)
         df.to_csv('fig1(b).csv', index=False)
 
+        print(np.linalg.norm(params_cvxpy - params))
+
 
     plt.figure()
     sns.color_palette("hls", 8)

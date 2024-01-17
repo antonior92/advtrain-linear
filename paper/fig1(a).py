@@ -40,7 +40,7 @@ def normalize(X_train, X_test, y_train, y_test):
 
     return X_train, X_test, y_train, y_test
 
-# DATASET
+# DATASET REGRESSION
 def magic():
     X, y = load_magic(input_folder='../WEBSITE/DATA')
     # Train-test split

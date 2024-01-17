@@ -1,5 +1,5 @@
 import numpy as np
-from linadvtrain.first_order_methods import gd, sgd, saga, cg
+from linadvtrain.first_order_methods import gd, agd, sgd, saga, cg
 import pytest
 from numpy import allclose
 from sklearn.linear_model._ridge import _ridge_regression
@@ -16,6 +16,20 @@ def test_gd_on_linear_regresion():
         return X.T @ (X @ param - y)
 
     p = gd(np.zeros(10), grad, lr=0.001)
+
+    allclose(p, param)
+
+def test_agd_on_linear_regresion():
+    rng = np.random.RandomState(1)
+    X = rng.randn(100, 10)
+    y = rng.randn(100)
+
+    param = np.linalg.pinv(X) @ y
+
+    def grad(param):
+        return X.T @ (X @ param - y)
+
+    p = agd(np.zeros(10), grad, lr=0.001)
 
     allclose(p, param)
 

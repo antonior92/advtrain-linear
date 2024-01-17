@@ -25,7 +25,7 @@ def test_l2(adv_radius):
     X, y = get_data()
     n_train, n_params = X.shape
     # Test dimension
-    params, info = lin_advclasif(X, y, adv_radius=adv_radius, verbose=False, p=2, momentum=0.2, nesterov=True, max_iter=100000)
+    params, info = lin_advclasif(X, y, adv_radius=adv_radius, verbose=False, p=2, max_iter=100000)
     assert params.shape == (n_params,)
 
     # Compare with cvxpy
@@ -41,7 +41,7 @@ def test_l2_largemomentum(adv_radius):
     X, y = get_data()
     n_train, n_params = X.shape
     # Test dimension
-    params, info = lin_advclasif(X, y, adv_radius=adv_radius, verbose=True, p=2, momentum=0.8, utol=1e-20, nesterov=True, max_iter=100000)
+    params, info = lin_advclasif(X, y, adv_radius=adv_radius, p=2, utol=1e-20, max_iter=100000)
     assert params.shape == (n_params,)
 
     # Compare with cvxpy
@@ -58,7 +58,7 @@ def test_linf(adv_radius):
     p = np.inf
     n_train, n_params = X.shape
     # Test dimension
-    params, info = lin_advclasif(X, y, adv_radius=adv_radius, verbose=False, p=p, lr=1, momentum=0.8, utol=1e-20, nesterov=True, max_iter=100000)
+    params, info = lin_advclasif(X, y, adv_radius=adv_radius, verbose=False, p=p, lr=1, utol=1e-20,  max_iter=100000)
     assert params.shape == (n_params,)
 
     # Compare with cvxpy
@@ -79,7 +79,8 @@ def test_l2_sgd(adv_radius):
     n_train, n_params = X.shape
     print(n_train)
     # Test dimension
-    params, info = lin_advclasif(X, y, adv_radius=adv_radius, lr=100000.0, method='sgd', max_iter=1000, verbose=True, p=2, batch_size=200)  # Something is very wrong with the LR!!
+    params, info = lin_advclasif(X, y, adv_radius=adv_radius, lr=100000.0, method='sgd', max_iter=1000,
+                                 verbose=True, p=2, batch_size=200)  # Something is very wrong with the LR!!
     assert params.shape == (n_params,)
 
     # Compare with cvxpy

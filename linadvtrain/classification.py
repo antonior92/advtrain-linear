@@ -2,7 +2,7 @@
 import numpy as np
 from linadvtrain.cvxpy_impl import compute_q
 from linadvtrain.solve_piecewise_lineq import solve_piecewise_lineq, pos
-from linadvtrain.first_order_methods import gd, sgd, saga
+from linadvtrain.first_order_methods import gd, agd, sgd, saga
 
 def soft_threshold(x, threshold):
     return np.sign(x) * pos(np.abs(x) - threshold)
@@ -98,6 +98,8 @@ def lin_advclasif(X, y, adv_radius=None, p=2, verbose=False, method='gd', callba
 
     if method == 'gd':
         w = gd(w0, cost.compute_grad, prox=prox, callback=new_callback, **kwargs)
+    elif method == 'agd':
+        w = agd(w0, cost.compute_grad, prox=prox, callback=new_callback, **kwargs)
     elif method == 'sgd':
         n_train = X.shape[0]
         w = sgd(w0, cost.compute_grad, n_train, prox=prox, callback=new_callback, **kwargs)

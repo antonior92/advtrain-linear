@@ -51,29 +51,37 @@ if __name__ == '__main__':
 
 
     # Test dimension
-    n_iter = 1000
-    momentum_list=[0.0, 0.2, 0.4, 0.6]
-    dist_gd = np.empty([len(momentum_list), n_iter])
+    n_iter = 100
+    dist_gd = np.empty([2, n_iter])
     dist_gd[:] = np.nan
-    for ll, mm in enumerate(momentum_list):
-        def callback(i, w, update_size):
-            dist_gd[ll, i] = np.linalg.norm(w[:-1] - params_cvxpy)
-        start_time = time.time()
-        params, info = lin_advclasif(X, y, adv_radius=adv_radius,
-                                     callback=callback, verbose=False,
-                                     p=np.inf, momentum=mm,
-                                     max_iter=n_iter, lr=200)
-        exec_time = time.time() - start_time
-        print(exec_time)
-        assert params.shape == (n_params,)
+
+    def callback(i, w, update_size):
+        dist_gd[0, i] = np.linalg.norm(w[:-1] - params_cvxpy)
+    start_time = time.time()
+    params, info = lin_advclasif(X, y, adv_radius=adv_radius, method='gd',
+                                 callback=callback, verbose=False,
+                                 p=np.inf, max_iter=n_iter, lr=200)
+    exec_time = time.time() - start_time
+    print(exec_time)
+    assert params.shape == (n_params,)
+
+    def callback(i, w, update_size):
+        dist_gd[1, i] = np.linalg.norm(w[:-1] - params_cvxpy)
+    start_time = time.time()
+    params, info = lin_advclasif(X, y, adv_radius=adv_radius, method='agd',
+                                 callback=callback, verbose=False, momentum=0.5,
+                                 p=np.inf, max_iter=n_iter, lr=200)
+    exec_time = time.time() - start_time
+    print(exec_time)
+    assert params.shape == (n_params,)
 
     import cProfile
 
-    cProfile.run("lin_advclasif(X, y, adv_radius=adv_radius, verbose=False, p=np.inf, momentum=0.2, nesterov=True)")
+    cProfile.run("lin_advclasif(X, y, adv_radius=adv_radius, verbose=False, p=np.inf)")
 
     import matplotlib.pyplot as plt
 
-    plt.plot(dist_gd.T,label=[f'$\mu = {m}$' for m in momentum_list])
+    plt.plot(dist_gd.T, label=['GD', 'AGD'])
     plt.yscale('log')
     plt.legend()
     plt.xlabel('\# iter')
