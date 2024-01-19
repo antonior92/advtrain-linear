@@ -29,6 +29,7 @@ mpl.rcParams['legend.fontsize'] = 18
 mpl.rcParams['legend.handlelength'] = 1
 mpl.rcParams['legend.handletextpad'] = 0.1
 mpl.rcParams['xtick.major.pad'] = 7
+plt.rcParams['image.cmap'] = 'gray'
 
 
 
@@ -53,27 +54,40 @@ if __name__ == '__main__':
     # Test dimension
     n_iter = 1000
     lr_list = [1, 10, 100, 200]
-    dist_gd = np.empty([len(lr_list), n_iter])
+    dist_gd = np.empty([len(lr_list) + 1, n_iter])
     dist_gd[:] = np.nan
     for ll, lr in enumerate(lr_list):
         def callback(i, w, update_size):
             dist_gd[ll, i] = np.linalg.norm(w[:-1] - params_cvxpy)
         start_time = time.time()
-        params, info = lin_advclasif(X, y, adv_radius=adv_radius,
+        params, info = lin_advclasif(X, y, adv_radius=adv_radius, backtrack=False,
                                      callback=callback, verbose=False,
-                                     p=np.inf,
-                                     max_iter=n_iter, lr=lr)
+                                     p=np.inf, max_iter=n_iter, lr=lr)
         exec_time = time.time() - start_time
         print(exec_time)
         assert params.shape == (n_params,)
 
+
+    def callback(i, w, update_size):
+        dist_gd[-1, i] = np.linalg.norm(w[:-1] - params_cvxpy)
+    start_time = time.time()
+    params, info = lin_advclasif(X, y, adv_radius=adv_radius, backtrack=True,
+                                 callback=callback, verbose=True, momentum=0.5,
+                                 p=np.inf, method='agd')
+    exec_time = time.time() - start_time
+    print(exec_time)
+    assert params.shape == (n_params,)
+
     import cProfile
 
-    cProfile.run("lin_advclasif(X, y, adv_radius=adv_radius, verbose=False, p=np.inf, momentum=0.2, nesterov=True)")
+    cProfile.run("lin_advclasif(X, y, adv_radius=adv_radius, verbose=False, p=np.inf)")
 
     import matplotlib.pyplot as plt
-
-    plt.plot(dist_gd.T, label=['lr = 1', 'lr = 10', 'lr = 100', 'lr = 200'])
+    labels = ['lr = 1', 'lr = 10', 'lr = 100', 'lr = 200', 'Backtrack LS']
+    colors = ['b', 'g', 'r', 'c', 'k']
+    linestyle=[':', ':', ':', ':', '-']
+    for i in range(dist_gd.shape[0]):
+        plt.plot(dist_gd[i, :], label=labels[i], color=colors[i], ls=linestyle[i])
     plt.yscale('log')
     plt.legend()
     plt.xlabel('\# iter')

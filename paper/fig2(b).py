@@ -51,7 +51,7 @@ if __name__ == '__main__':
 
 
     # Test dimension
-    n_iter = 100
+    n_iter = 400
     dist_gd = np.empty([2, n_iter])
     dist_gd[:] = np.nan
 
@@ -60,7 +60,7 @@ if __name__ == '__main__':
     start_time = time.time()
     params, info = lin_advclasif(X, y, adv_radius=adv_radius, method='gd',
                                  callback=callback, verbose=False,
-                                 p=np.inf, max_iter=n_iter, lr=200)
+                                 p=np.inf, max_iter=n_iter)
     exec_time = time.time() - start_time
     print(exec_time)
     assert params.shape == (n_params,)
@@ -70,7 +70,7 @@ if __name__ == '__main__':
     start_time = time.time()
     params, info = lin_advclasif(X, y, adv_radius=adv_radius, method='agd',
                                  callback=callback, verbose=False, momentum=0.5,
-                                 p=np.inf, max_iter=n_iter, lr=200)
+                                 p=np.inf, max_iter=n_iter)
     exec_time = time.time() - start_time
     print(exec_time)
     assert params.shape == (n_params,)

@@ -1,5 +1,6 @@
 import numpy as np
-from linadvtrain.first_order_methods import gd, agd, sgd, saga, cg
+from linadvtrain.first_order_methods import gd, agd, sgd, saga, cg, \
+    gd_with_backtrack, agd_with_backtrack
 import pytest
 from numpy import allclose
 from sklearn.linear_model._ridge import _ridge_regression
@@ -19,6 +20,22 @@ def test_gd_on_linear_regresion():
 
     allclose(p, param)
 
+def test_gd_with_backtrack_on_linear_regresion():
+    rng = np.random.RandomState(1)
+    X = rng.randn(100, 10)
+    y = rng.randn(100)
+
+    param = np.linalg.pinv(X) @ y
+
+    def cost(param):
+        return (X @ param - y).T @ (X @ param - y)
+    def grad(param):
+        return X.T @ (X @ param - y)
+
+    p = gd_with_backtrack(np.zeros(10), cost, grad)
+
+    allclose(p, param)
+
 def test_agd_on_linear_regresion():
     rng = np.random.RandomState(1)
     X = rng.randn(100, 10)
@@ -33,7 +50,21 @@ def test_agd_on_linear_regresion():
 
     allclose(p, param)
 
+def test_agd_with_backtrack_on_linear_regresion():
+    rng = np.random.RandomState(1)
+    X = rng.randn(100, 10)
+    y = rng.randn(100)
 
+    param = np.linalg.pinv(X) @ y
+
+    def cost(param):
+        return (X @ param - y).T @ (X @ param - y)
+    def grad(param):
+        return X.T @ (X @ param - y)
+
+    p = agd_with_backtrack(np.zeros(10), cost, grad)
+
+    allclose(p, param)
 
 def test_sgd_on_linear_regresion():
     rng = np.random.RandomState(1)

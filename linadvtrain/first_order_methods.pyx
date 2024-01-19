@@ -31,6 +31,45 @@ def gd(np.ndarray[np.float64_t, ndim=1] w0,  object compute_grad,  object prox =
     return w
 
 
+def gd_with_backtrack(np.ndarray[np.float64_t, ndim=1] w0, object compute_cost, object compute_grad,
+                      object prox = None,  object callback=None,  int max_iter=10000, float max_lr=1e10,
+                      float decreasing_factor=1.5, float utol=1e-12, int every_ith=1):
+    if prox is None:
+      prox = identity
+
+    cdef np.ndarray[np.float64_t, ndim = 1] w = np.copy(w0)
+    cdef np.ndarray[np.float64_t, ndim = 1] new_w = np.copy(w0)
+    cdef np.ndarray[np.float64_t, ndim = 1] grad = np.zeros_like(w0)
+    cdef np.ndarray[np.float64_t, ndim = 1] update_param = np.zeros_like(w0)
+    cdef float f = compute_cost(w0)
+    cdef float next_f
+    cdef float quadratic_approx_f
+    cdef float lr = max_lr
+    cdef int MAXBACKTRACK = 100
+    cdef int i, j
+
+    for i in range(max_iter):
+        grad = compute_grad(w)
+        # Backtrack line search
+        for j in range(MAXBACKTRACK):
+            new_w = prox(w - lr * grad)
+            next_f = compute_cost(new_w)
+            update_size = np.linalg.norm(new_w - w)
+            quadratic_approx_f = f + grad.dot(new_w - w) + 1/(2 * lr) * update_size * update_size
+            if next_f <= quadratic_approx_f:
+                f = next_f
+                w = new_w
+                break
+            else:
+                lr = lr / decreasing_factor
+        if i % every_ith == 0 and callback is not None:
+            callback(i, w, update_size)
+        if update_size < utol:
+            break
+    return w
+
+
+
 
 def agd(np.ndarray[np.float64_t, ndim=1] w0,  object compute_grad,  object prox = None,
         object callback=None,  int max_iter=10000, float lr=1.0, float momentum = 1.0,
@@ -53,6 +92,54 @@ def agd(np.ndarray[np.float64_t, ndim=1] w0,  object compute_grad,  object prox 
         look_ahead_w  = new_w  + momentum * (ti - 1) / ti_next * (new_w - w)
         update_size = np.linalg.norm(new_w - w)
         w = new_w
+        ti = ti_next
+        if i % every_ith == 0 and callback is not None:
+            callback(i, w, update_size)
+        if update_size < utol:
+            break
+    return w
+
+
+
+
+def agd_with_backtrack(np.ndarray[np.float64_t, ndim=1] w0, object compute_cost,  object compute_grad,  object prox = None,
+        object callback=None,  int max_iter=10000, float momentum = 1.0, float max_lr=1e10,
+                      float decreasing_factor=1.5, float utol=1e-12, int every_ith=1):
+    if prox is None:
+      prox = identity
+
+    cdef np.ndarray[np.float64_t, ndim = 1] w = np.copy(w0)
+    cdef np.ndarray[np.float64_t, ndim = 1] new_w = np.copy(w0)
+    cdef np.ndarray[np.float64_t, ndim = 1] grad = np.zeros_like(w0)
+    cdef np.ndarray[np.float64_t, ndim = 1] look_ahead_w = np.copy(w0)
+    cdef int i
+    cdef float ti = 1
+    cdef float ti_next = 1
+    cdef float f = compute_cost(w0)
+    cdef float next_f
+    cdef float quadratic_approx_f
+    cdef float lr = max_lr
+    cdef int MAXBACKTRACK = 100
+
+    for i in range(max_iter):
+        # Backtrack line search
+        f = compute_cost(look_ahead_w)
+        grad = compute_grad(look_ahead_w)
+        for j in range(MAXBACKTRACK):
+            new_w = prox(look_ahead_w  - lr * grad)
+            next_f = compute_cost(new_w)
+            update_size = np.linalg.norm(new_w - look_ahead_w)
+            quadratic_approx_f = f + grad.dot(new_w - look_ahead_w) + 1 / (2 * lr) * update_size * update_size
+            if next_f <= quadratic_approx_f:
+                break
+            else:
+                print(f'lr={lr}, f={f}, next_f={next_f}, quadratic_approx_f={quadratic_approx_f}')
+                lr = lr / decreasing_factor
+        ti_next = (1 + np.sqrt(1 + 4 * ti * ti)) / 2
+        look_ahead_w  = new_w  + momentum * (ti - 1) / ti_next * (new_w - w)
+        update_size = np.linalg.norm(new_w - w)
+        w = new_w
+        f = next_f
         ti = ti_next
         if i % every_ith == 0 and callback is not None:
             callback(i, w, update_size)

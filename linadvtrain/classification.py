@@ -2,7 +2,7 @@
 import numpy as np
 from linadvtrain.cvxpy_impl import compute_q
 from linadvtrain.solve_piecewise_lineq import solve_piecewise_lineq, pos
-from linadvtrain.first_order_methods import gd, agd, sgd, saga
+from linadvtrain.first_order_methods import gd, agd, sgd, saga, gd_with_backtrack, agd_with_backtrack
 
 def soft_threshold(x, threshold):
     return np.sign(x) * pos(np.abs(x) - threshold)
@@ -80,7 +80,7 @@ class CostFunction:
         return merge_params(jac_param, jac_max_norm[:, None])
 
 
-def lin_advclasif(X, y, adv_radius=None, p=2, verbose=False, method='gd', callback=None, **kwargs):
+def lin_advclasif(X, y, adv_radius=None, p=2, verbose=False, method='gd', backtrack=True, callback=None, **kwargs):
     """Linear adversarial classification """
     if adv_radius is None:
         adv_radius = 0.001
@@ -97,9 +97,15 @@ def lin_advclasif(X, y, adv_radius=None, p=2, verbose=False, method='gd', callba
         new_callback = callback
 
     if method == 'gd':
-        w = gd(w0, cost.compute_grad, prox=prox, callback=new_callback, **kwargs)
+        if backtrack:
+            w = gd_with_backtrack(w0, cost.compute_cost, cost.compute_grad, prox=prox, callback=new_callback, **kwargs)
+        else:
+            w = gd(w0, cost.compute_grad, prox=prox, callback=new_callback, **kwargs)
     elif method == 'agd':
-        w = agd(w0, cost.compute_grad, prox=prox, callback=new_callback, **kwargs)
+        if backtrack:
+            w = agd_with_backtrack(w0, cost.compute_cost, cost.compute_grad, prox=prox, callback=new_callback, **kwargs)
+        else:
+            w = agd(w0, cost.compute_grad, prox=prox, callback=new_callback, **kwargs)
     elif method == 'sgd':
         n_train = X.shape[0]
         w = sgd(w0, cost.compute_grad, n_train, prox=prox, callback=new_callback, **kwargs)
@@ -108,6 +114,9 @@ def lin_advclasif(X, y, adv_radius=None, p=2, verbose=False, method='gd', callba
         w = saga(w0, cost.compute_jac, n_train, prox=prox, callback=new_callback, **kwargs)
     param, t = split_params(w)
     return param, {}
+
+
+
 
 
 
