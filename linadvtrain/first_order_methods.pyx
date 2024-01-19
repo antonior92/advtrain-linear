@@ -134,7 +134,7 @@ def saga(np.ndarray[np.float64_t, ndim=1] w0, object compute_jac, int n_train, i
 
 def cg(object X, np.ndarray[np.float64_t, ndim=1] y,
        np.ndarray[np.float64_t, ndim=1] param0=None,
-       int max_iter=0, object precond=None, float tol=1e-8):
+       int max_iter=0, object precond=None, float rtol=1e-8):
     """Use conjugate gradient to solve the linear system X @ param = y."""
 
     n_params = X.shape[1]
@@ -149,8 +149,8 @@ def cg(object X, np.ndarray[np.float64_t, ndim=1] y,
         param[:] = param0[:]
 
     cdef np.ndarray[np.float64_t, ndim=1] resid = X.dot(param) - y
-    cdef np.ndarray[np.float64_t, ndim=1] update_d = -np.copy(resid)
     cdef np.ndarray[np.float64_t, ndim=1] precond_resid = precond(resid)
+    cdef np.ndarray[np.float64_t, ndim=1] update_d = -precond_resid
     cdef np.ndarray[np.float64_t, ndim=1] X_update_d = np.zeros(n_params)
 
     cdef double alpha, beta, resid_sqnorm, resid_sqnorm_next
@@ -163,7 +163,7 @@ def cg(object X, np.ndarray[np.float64_t, ndim=1] y,
         resid = resid + alpha * X_update_d
         precond_resid = precond(resid)
         resid_sqnorm_next = resid.T @ precond_resid
-        if resid_sqnorm_next < 1e-10:
+        if np.linalg.norm(resid)< rtol:
             break
         beta = resid_sqnorm_next / resid_sqnorm
         update_d = - precond_resid + beta * update_d

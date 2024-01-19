@@ -19,6 +19,15 @@ class RidgeCG():
 
     def __call__(self, params0, reg, w_params=None, w_samples=None):
         X = self.X
+        diag = np.linalg.norm(np.sqrt(w_samples[:, None]) * X, ord=2, axis=0) ** 2
+        if w_params is None:
+            diag += reg
+        else:
+            diag += reg * w_params
+
+        def precond(x):
+            return x / diag
+
         def f(param):
             out = X.T @ (w_samples * (X @ param))
             if w_params is None:
@@ -29,11 +38,9 @@ class RidgeCG():
         A = LinearOperator(matvec=f, shape=(self.n_params, self.n_params))
         b = X.T @ (w_samples * self.y)
 
-        params_cg = cg(A, b, params0)
+        params_cg = cg(A, b, params0, precond=precond, rtol=1e-20)
 
         return params_cg, {}
-
-
 
 
 def ridge_cg(X, y, reg,  *args, **kwargs):

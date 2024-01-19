@@ -86,7 +86,7 @@ if __name__ == '__main__':
     plt.legend()
     plt.xlabel('\# iter')
     plt.ylabel(r'$||\beta^{(i)} - \beta_*||$')
-    plt.savefig('imgs/fig3.pdf')
+    plt.savefig('imgs/fig2(b).pdf')
     plt.show()
 
 

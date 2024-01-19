@@ -135,6 +135,9 @@ def test_l1_diabetes_zero():
     params, info = lin_advregr(X, y, adv_radius=adv_radius, p=np.inf, max_iter=1000)
     assert not allclose(params, np.zeros_like(params),  rtol=1e-8, atol=1e-8)
 
+
+
+
 def test_l1_cg():
     # Generate data
     adv_radius = 0.01
@@ -150,6 +153,43 @@ def test_l1_cg():
 
     assert allclose(params_cvxpy, params,  rtol=1e-8, atol=1e-8)
 
+
+def test_l1_cg_alternative():
+    # Generate data
+    rng = np.random.RandomState(1)
+    n_train = 1000
+    n_params = int(0.1 * n_train)
+    X = rng.randn(n_train, n_params)
+    beta = rng.randn(n_params)
+    y = X @ beta + 0.1 * rng.randn(n_train)
+    adv_radius = solvers.get_radius(X, y, p=np.inf, option='randn_zero')
+    n_train, n_params = X.shape
+    # Test dimension
+    paramscg, info = lin_advregr(X, y, adv_radius=adv_radius, verbose=True, p=np.inf,
+                                 method='w-cg', max_iter=1000)
+    assert paramscg.shape == (n_params,)
+
+    # Compare with cvxpy
+    mdl = cvxpy_impl.AdversarialRegression(X, y, p=np.inf)
+    params_cvxpy = mdl(adv_radius=adv_radius, verbose=False)
+
+    print(np.linalg.norm(paramscg - params_cvxpy))
+    assert allclose(params_cvxpy, paramscg,  rtol=1e-2, atol=1e-2)
+
+def test_ridge_cg():
+    # Generate data
+    X, y = get_data()
+    reg = 0.01
+    for i in range(10):
+        w_samples = np.random.rand(X.shape[0]) + 0.001
+        w_params = np.random.rand(X.shape[1]) + 0.001
+
+        params, subprob_info = solvers.Reweighted(solvers.ridge)(X, y, reg, w_samples=w_samples, w_params=w_params)
+
+        ridge_cg = solvers.RidgeCG(X, y)
+        params_cg, subprob_info = ridge_cg(np.zeros_like(params), reg, w_samples=w_samples, w_params=w_params)
+        print(np.linalg.norm(params_cg - params))
+        assert allclose(params, params_cg)
 
 if __name__ == '__main__':
     pytest.main()

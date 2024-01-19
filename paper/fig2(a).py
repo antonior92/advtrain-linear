@@ -14,11 +14,14 @@ import numpy as np
 import linadvtrain.cvxpy_impl as cvxpy_impl
 import time
 
+# Basic style
+plt.style.use(['mystyle.mpl'])
+
 # Additional style
 mpl.rcParams['figure.figsize'] = 7, 3
 
-mpl.rcParams['figure.subplot.left'] = 0.19
-mpl.rcParams['figure.subplot.bottom'] = 0.25
+mpl.rcParams['figure.subplot.left'] = 0.17
+mpl.rcParams['figure.subplot.bottom'] = 0.23
 mpl.rcParams['figure.subplot.right'] = 0.99
 mpl.rcParams['figure.subplot.top'] = 0.95
 mpl.rcParams['font.size'] = 22
@@ -48,34 +51,34 @@ if __name__ == '__main__':
 
 
     # Test dimension
-    n_iter = 50
-    n_config = 3
-    dist_gd = np.empty([n_config, n_iter])
+    n_iter = 1000
+    lr_list = [1, 10, 100, 200]
+    dist_gd = np.empty([len(lr_list), n_iter])
     dist_gd[:] = np.nan
-    def callback(i, w, update_size):
-        dist_gd[0, i] = np.linalg.norm(w[:-1] - params_cvxpy)
-    params, info = lin_advclasif(X, y, adv_radius=adv_radius,
-                                 callback=callback, verbose=False,
-                                 p=np.inf, max_iter=n_iter, lr=200)
-    def callback(i, w, update_size):
-        dist_gd[1, i] = np.linalg.norm(w[:-1] - params_cvxpy)
-    params, info = lin_advclasif(X, y, adv_radius=adv_radius, batch_size=1,
-                                 method='sgd', callback=callback, verbose=True,
-                                 p=np.inf, max_iter=n_iter, lr=1000)
+    for ll, lr in enumerate(lr_list):
+        def callback(i, w, update_size):
+            dist_gd[ll, i] = np.linalg.norm(w[:-1] - params_cvxpy)
+        start_time = time.time()
+        params, info = lin_advclasif(X, y, adv_radius=adv_radius,
+                                     callback=callback, verbose=False,
+                                     p=np.inf,
+                                     max_iter=n_iter, lr=lr)
+        exec_time = time.time() - start_time
+        print(exec_time)
+        assert params.shape == (n_params,)
 
-    def callback(i, w, update_size):
-        dist_gd[2, i] = np.linalg.norm(w[:-1] - params_cvxpy)
-    params, info = lin_advclasif(X, y, adv_radius=adv_radius, batch_size=1,
-                                 method='saga', callback=callback, verbose=True,
-                                 p=np.inf, max_iter=n_iter, lr=4000)
+    import cProfile
+
+    cProfile.run("lin_advclasif(X, y, adv_radius=adv_radius, verbose=False, p=np.inf, momentum=0.2, nesterov=True)")
 
     import matplotlib.pyplot as plt
 
-    plt.plot(dist_gd.T, label=['GD', 'SGD', 'SAGA'])
+    plt.plot(dist_gd.T, label=['lr = 1', 'lr = 10', 'lr = 100', 'lr = 200'])
     plt.yscale('log')
     plt.legend()
-    plt.xlabel('# iter')
+    plt.xlabel('\# iter')
     plt.ylabel(r'$||\beta^{(i)} - \beta_*||$')
-    plt.savefig('imgs/fig4.pdf')
+    plt.savefig('imgs/fig2(a).pdf')
     plt.show()
+
 

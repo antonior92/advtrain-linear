@@ -121,3 +121,22 @@ def test_cg_ridge():
     assert allclose(param_ridge, params_cg_dual)
 
 
+def test_cg_ridge_precond():
+    n_params = 10
+    rng = np.random.RandomState(1)
+    X_aux = rng.randn(100, n_params)
+    X = X_aux @ X_aux.T
+    y = X_aux @ rng.randn(n_params)
+    reg = 0.1
+
+    param_ridge = _ridge_regression(X, y, 0.1)
+
+    # primal formulation
+    A = X.T @ X + 0.1 * np.eye(100)
+    b = X.T @ y
+    d = np.diag(A)
+    params_cg = cg(A, b, precond=lambda x: x / d, rtol=1e-10)
+    assert allclose(param_ridge, params_cg)
+
+
+
