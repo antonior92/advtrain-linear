@@ -48,10 +48,30 @@ if __name__ == '__main__':
     exec_time = time.time() - start_time
     print(exec_time)
 
+    def power_method_covmatr(X, num_iterations: int = 10):
+        # Here A = 1/n X.T X
+        # Ideally choose a random vector
+        # To decrease the chance that our vector
+        # Is orthogonal to the eigenvector
+        np.random.seed(1)
+        v = np.random.rand(X.shape[0])
+        n = X.shape[0]
+
+        for _ in range(num_iterations):
+            v = 1/n * np.dot(X, np.dot(X.T, v))
+            s = np.max(v)
+            v = v / s
+
+        return s
+
+    s = power_method_covmatr(X)
+    #print(s)
+    #print(1/ X.shape[0] * np.linalg.svd(X @ X.T, compute_uv=False)[0])
+
 
     # Test dimension
     n_iter = 1000
-    lr_list = [1, 10, 100, 200]
+    lr_list = [2/s, 10/s, 50/s, 150/s]
     dist_gd = np.empty([len(lr_list) + 1, n_iter])
     dist_gd[:] = np.nan
     for ll, lr in enumerate(lr_list):
@@ -81,7 +101,7 @@ if __name__ == '__main__':
     cProfile.run("lin_advclasif(X, y, adv_radius=adv_radius, verbose=False, p=np.inf)")
 
     import matplotlib.pyplot as plt
-    labels = ['lr = 1', 'lr = 10', 'lr = 100', 'lr = 200', 'Backtrack LS']
+    labels = [r'lr = 2/$\lambda_{\mathrm{max}}$', 'lr = 10/$\lambda_{\mathrm{max}}$', 'lr = 50/$\lambda_{\mathrm{max}}$', 'lr = 150/$\lambda_{\mathrm{max}}$', 'Backtrack LS']
     colors = ['b', 'g', 'r', 'c', 'k']
     linestyle=[':', ':', ':', ':', '-']
     for i in range(dist_gd.shape[0]):
