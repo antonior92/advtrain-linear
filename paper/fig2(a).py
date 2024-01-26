@@ -5,10 +5,8 @@ from sklearn.datasets import load_diabetes
 from sklearn.linear_model import ElasticNetCV, LassoLarsIC, Lasso
 from ucimlrepo import fetch_ucirepo, list_available_datasets
 import matplotlib as mpl
-import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn import datasets
-import matplotlib
 from linadvtrain.classification import lin_advclasif, CostFunction
 import numpy as np
 import linadvtrain.cvxpy_impl as cvxpy_impl

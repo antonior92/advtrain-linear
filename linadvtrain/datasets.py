@@ -15,6 +15,7 @@ def load_magic(input_folder='WEBSITE/DATA', output_phenotype='HET_2'):
                      "Soissons", "Spark", "Steadfast", "Stetson"]
 
     # Genotype
+    print('genotype')
     genotype = pd.read_csv(os.path.join(input_folder, 'MAGIC_IMPUTED_PRUNED/MAGIC_imputed.pruned.traw'),
                            sep='\t')
     genotype.set_index('SNP', inplace=True)
@@ -25,15 +26,19 @@ def load_magic(input_folder='WEBSITE/DATA', output_phenotype='HET_2'):
     genotype = genotype.transpose()
 
     # Phenotype
+
+    print('phenotype')
     phenotype = pd.read_csv(os.path.join(input_folder, 'PHENOTYPES/NDM_phenotypes.tsv'), sep='\t')
     phenotype.set_index('line_name', inplace=True)
     phenotype.drop(founder_names, inplace=True)
     del phenotype['line_code']
 
     # Make genotype have the same index as phenotype
+    print('reindex')
     genotype = genotype.reindex(phenotype.index, )
 
     # Replace NAs
+    print('Fill NAs')
     genotype = genotype.fillna(genotype.mean(axis=0))
     phenotype = phenotype.fillna(phenotype.mean(axis=0))
 

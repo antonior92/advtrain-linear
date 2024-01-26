@@ -5,7 +5,7 @@ from numpy import allclose
 import linadvtrain.cvxpy_impl as cvxpy_impl
 from linadvtrain.regression import lin_advregr, get_radius
 import sklearn.model_selection
-from linadvtrain.datasets import load_magic
+from datasets import magic
 import numpy as np
 import time
 import matplotlib as mpl
@@ -49,55 +49,68 @@ def normalize(X_train, X_test, y_train, y_test):
 
 if __name__ == "__main__":
     import pandas as pd
+    import argparse
 
-    load_data = True
+    parser = argparse.ArgumentParser()
+    # Add argument for plotting
+    parser.add_argument('--dont_plot', action='store_true', help='Enable plotting')
+    parser.add_argument('--load_data', action='store_true', help='Enable data loading')
+    parser.add_argument('--n_params', type=int, nargs='+', default=[30, 100, 300, 1000, 3000, 10000, 30000, 100000],
+                        help='List of parameters to use (choose from [50, 100, 200])')
+    parser.add_argument('--max_cvxpy', type=int, default=150,
+                        )
+    args = parser.parse_args()
 
 
-    X, y = load_magic(input_folder='../WEBSITE/DATA')
+    print('load magic..')
+    X_train_, X_test_, y_train, y_test = magic()
 
-    # Train-test split
-    X_train_, X_test_, y_train, y_test = sklearn.model_selection.train_test_split(X, y, test_size=50, random_state=0)
-    X_train_, X_test_, y_train, y_test = normalize(X_train_, X_test_, y_train, y_test)
-
-    if load_data:
+    if args.load_data:
         df = pd.read_csv('data/fig1(b).csv')
     else:
         df = pd.DataFrame({'method': [], 'n_params': [], 'time': []})
-    for n_params in []:
-        X_train, X_test = X_train_[:, :n_params], X_test_[:, :n_params]
-        n_train, n_params = X_train.shape
-        # Test dimension
-        adv_radius = get_radius(X_train, y_train, p=np.inf, option='randn_zero')
+        for n_params in args.n_params:
+            X_train, X_test = X_train_[:, :n_params], X_test_[:, :n_params]
+            print(f'running for {X_train.shape[1]}')
+            n_train, n_params = X_train.shape
+            # Test dimension
+            adv_radius = get_radius(X_train, y_train, p=np.inf, option='randn_zero')
 
-        start_time = time.time()
-        params, info = lin_advregr(X_train, y_train, adv_radius=adv_radius, verbose=False, p=np.inf, method='w-ridge')
-        exec_time = time.time() - start_time
-        df = df.append({
-            'method': 'irr',
-            'n_params': n_params,
-            'time': exec_time}, ignore_index=True)
+            start_time = time.time()
+            print(f'ours')
+            params, info = lin_advregr(X_train, y_train, adv_radius=adv_radius, verbose=False, p=np.inf, method='w-ridge')
+            exec_time = time.time() - start_time
+            df = df.append({
+                'method': 'irr',
+                'n_params': X_train.shape[1],
+                'time': exec_time}, ignore_index=True)
 
-        # Compare with cvxpy
-        start_time = time.time()
-        mdl = cvxpy_impl.AdversarialRegression(X_train, y_train, p=np.inf)
-        params_cvxpy = mdl(adv_radius=adv_radius, verbose=False)
-        exec_time = time.time() - start_time
-        df = df.append({
-            'method': 'cvxpy',
-            'n_params': n_params,
-            'time': exec_time}, ignore_index=True)
-        df.to_csv('fig1(b).csv', index=False)
+            # Compare with cvxpy
+            if n_params < args.max_cvxpy:
+                start_time = time.time()
+                print(f'cvxpy')
+                mdl = cvxpy_impl.AdversarialRegression(X_train, y_train, p=np.inf)
+                params_cvxpy = mdl(adv_radius=adv_radius, verbose=False)
+                exec_time = time.time() - start_time
+                df = df.append({
+                    'method': 'cvxpy',
+                    'n_params': X_train.shape[1],
+                    'time': exec_time}, ignore_index=True)
 
-        print(np.linalg.norm(params_cvxpy - params))
 
+                dist_sols = np.linalg.norm(params_cvxpy - params)
+                print(f'distance = {dist_sols}')
+            print(f'---')
+            df.to_csv('data/fig1(b).csv', index=False)
 
-    plt.figure()
-    sns.color_palette("hls", 8)
-    sns.pointplot(data=df, x='n_params', y='time', hue='method', errorbar=None, native_scale=True)
-    plt.xscale('log')
-    plt.xlabel('\# parameters')
-    plt.xlabel('time (s)')
-    plt.yscale('log')
-    plt.legend(title='', labels=['ours', 'cvxpy'])
-    plt.savefig('fig1(b).pdf')
-    plt.show()
+    if not args.dont_plot:
+        plt.figure()
+        sns.color_palette("hls", 8)
+        sns.pointplot(data=df, x='n_params', y='time', hue='method', errorbar=None, native_scale=True)
+        plt.xscale('log')
+        plt.xlabel('\# parameters')
+        plt.xlabel('time (s)')
+        plt.yscale('log')
+        plt.legend(title='', labels=['ours', 'cvxpy'])
+        plt.savefig('fig1(b).pdf')
+        plt.show()
