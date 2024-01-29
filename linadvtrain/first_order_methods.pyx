@@ -6,8 +6,8 @@ cimport numpy as np
 def identity(np.ndarray[np.float64_t, ndim=1]  x):
     return x
 
-def gd(np.ndarray[np.float64_t, ndim=1] w0,  object compute_grad,  object prox = None,
-      object callback=None,  int max_iter=10000, float lr=1.0,
+def gd(np.ndarray[np.float64_t, ndim=1] w0,  object compute_cost, object compute_grad,
+       object prox = None,  object callback=None,  int max_iter=10000, float lr=1.0,
        float utol=1e-12, int every_ith=1):
     if prox is None:
       prox = identity
@@ -19,13 +19,14 @@ def gd(np.ndarray[np.float64_t, ndim=1] w0,  object compute_grad,  object prox =
     cdef int i
 
     for i in range(max_iter):
+        cost = compute_cost(w)
         grad = compute_grad(w)
         # Do updates
         new_w = prox(w - lr * grad)
         update_size = np.linalg.norm(new_w - w)
         w = new_w
         if i % every_ith == 0 and callback is not None:
-            callback(i, w, update_size)
+            callback(i, w, cost, update_size)
         if update_size < utol:
             break
     return w
@@ -63,7 +64,7 @@ def gd_with_backtrack(np.ndarray[np.float64_t, ndim=1] w0, object compute_cost, 
             else:
                 lr = lr / decreasing_factor
         if i % every_ith == 0 and callback is not None:
-            callback(i, w, update_size)
+            callback(i, w, f, update_size)
         if update_size < utol:
             break
     return w
@@ -71,7 +72,7 @@ def gd_with_backtrack(np.ndarray[np.float64_t, ndim=1] w0, object compute_cost, 
 
 
 
-def agd(np.ndarray[np.float64_t, ndim=1] w0,  object compute_grad,  object prox = None,
+def agd(np.ndarray[np.float64_t, ndim=1] w0,  object compute_cost, object compute_grad,  object prox = None,
         object callback=None,  int max_iter=10000, float lr=1.0, float momentum = 1.0,
         float utol=1e-12, int every_ith=1):
     if prox is None:
@@ -92,9 +93,10 @@ def agd(np.ndarray[np.float64_t, ndim=1] w0,  object compute_grad,  object prox 
         look_ahead_w  = new_w  + momentum * (ti - 1) / ti_next * (new_w - w)
         update_size = np.linalg.norm(new_w - w)
         w = new_w
+        f = compute_cost(w)
         ti = ti_next
         if i % every_ith == 0 and callback is not None:
-            callback(i, w, update_size)
+            callback(i, w, f, update_size)
         if update_size < utol:
             break
     return w
@@ -142,14 +144,14 @@ def agd_with_backtrack(np.ndarray[np.float64_t, ndim=1] w0, object compute_cost,
         f = next_f
         ti = ti_next
         if i % every_ith == 0 and callback is not None:
-            callback(i, w, update_size)
+            callback(i, w, f, update_size)
         if update_size < utol:
             break
     return w
 
 
 
-def sgd(np.ndarray[np.float64_t, ndim=1] w0,  object compute_grad,  int n_train, int batch_size=1,
+def sgd(np.ndarray[np.float64_t, ndim=1] w0,  object compute_cost, object compute_grad,  int n_train, int batch_size=1,
         object prox = None, object callback=None,  int max_iter=100, float lr=1.0,
         float utol=1e-12, int every_ith=1):
     if prox is None:
@@ -157,6 +159,7 @@ def sgd(np.ndarray[np.float64_t, ndim=1] w0,  object compute_grad,  int n_train,
 
     cdef np.ndarray[np.float64_t, ndim = 1] w = np.copy(w0)
     cdef np.ndarray[np.float64_t, ndim = 1] new_w = np.copy(w0)
+    cdef np.ndarray[np.float64_t, ndim = 1] mean_w = np.zeros_like(w0)
     cdef np.ndarray[np.float64_t, ndim = 1] grad = np.zeros_like(w0)
     cdef np.ndarray[np.float64_t, ndim = 1] update_param = np.zeros_like(w0)
     cdef np.ndarray[long, ndim = 1]  indexes = np.random.permutation(np.arange(n_train))
@@ -164,22 +167,25 @@ def sgd(np.ndarray[np.float64_t, ndim=1] w0,  object compute_grad,  int n_train,
     cdef int i, s
     cdef int n_batches = n_train // batch_size
 
+    n_vals = 0
     for i in range(max_iter):
         for s in range(n_batches):
             indexes_batch[:] = indexes[batch_size*s:batch_size*(s+1)]
             grad = compute_grad(w, indexes_batch)
-            new_w = prox(w - lr * grad)
+            new_w = prox(w - lr / np.sqrt(i+1) * grad)
+            w = 1 / (n_vals +1) * (new_w + n_vals * mean_w)
+            n_vals += 1
             update_size = np.linalg.norm(new_w - w)
             w = new_w
         if i % every_ith == 0 and callback is not None:
-            callback(i, w, update_size)
+            callback(i, w, compute_cost(w), update_size)
         if update_size < utol:
             break
         indexes = np.random.permutation(np.arange(n_train))
     return w
 
 
-def saga(np.ndarray[np.float64_t, ndim=1] w0, object compute_jac, int n_train, int batch_size=1,
+def saga(np.ndarray[np.float64_t, ndim=1] w0, object compute_cost, object compute_jac, int n_train, int batch_size=1,
          object prox = None, object callback=None, int max_iter=10000, float lr=1.0,
          float momentum=0.0, float utol=1e-12, int every_ith=1):
     if prox is None:
@@ -213,7 +219,7 @@ def saga(np.ndarray[np.float64_t, ndim=1] w0, object compute_jac, int n_train, i
             w = new_w
             jac[indexes_batch, :] = jac_new
         if i % every_ith == 0 and callback is not None:
-            callback(i, w, update_size)
+            callback(i, w, compute_cost(w), update_size)
         if update_size < utol:
             break
         indexes = np.random.permutation(np.arange(n_train))

@@ -65,20 +65,7 @@ if __name__ == "__main__":
                 'n_params': n_params,
                 'time': exec_time}, ignore_index=True)
 
-
-            #start_time = time.time()
-            #mdl = cvxpy_impl.AdversarialRegression(X_train, y_train, p=np.inf)
-            #params_cvxpy = mdl(adv_radius=adv_radius, verbose=False)
-            #exec_time = time.time() - start_time
-            #df = df.append({
-            #    'method': 'cvxpy',
-            #    'n_params': n_params,
-            #    'time': exec_time}, ignore_index=True)
-
-
             df.to_csv('data/fig3.csv', index=False)
-
-            #print(n_train, np.linalg.norm(paramscg- params_cvxpy))
 
 
     plt.figure()

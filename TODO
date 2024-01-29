@@ -1,4 +1,3 @@
-- [x] Refactor sgd_logistic
 - [ ] Implement Lipschitz sampling
 - [ ] Refactor classification.py porting the GD implementation to a separate file
 - [ ] Add time benchmark

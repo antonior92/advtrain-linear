@@ -80,45 +80,76 @@ class CostFunction:
         return merge_params(jac_param, jac_max_norm[:, None])
 
 
-def lin_advclasif(X, y, adv_radius=None, p=2, verbose=False, method='gd', backtrack=True, callback=None, **kwargs):
+def power_method_covmatr(X, num_iterations: int = 10):
+    """Estimate maximum eingenvalue of the empirical covariance matrix of X"""
+    # Here A = 1/n X.T X
+    # Ideally choose a random vector
+    # To decrease the chance that our vector
+    # Is orthogonal to the eigenvector
+    np.random.seed(1)
+    v = np.random.rand(X.shape[0])
+    n = X.shape[0]
+
+    for _ in range(num_iterations):
+        v = 1/n * np.dot(X, np.dot(X.T, v))
+        s = np.max(v)
+        v = v / s
+    return s
+
+
+def lin_advclasif(X, y, adv_radius=None, p=2, verbose=False, method='gd', backtrack=True, callback=None, lr=None,
+                  save_costs=True,  max_iter=1000, **kwargs):
     """Linear adversarial classification """
     if adv_radius is None:
         adv_radius = 0.001
     cost = CostFunction(X, y, adv_radius, p)
     prox = lambda x: projection(x, p=p)
     w0 = np.zeros(cost.n_params + 1)
-    if verbose:
-        def new_callback(i, w, update_size):
-            print(f'Iteration {i} | update size: {update_size:4.3e} | cost: {cost.compute_cost(w)} | ')
-            if callback is not None:
-                callback(i, w, update_size)
+    costs = np.empty(max_iter)
+    costs[:] = np.nan
 
+    def new_callback(i, w, f, update_size):
+        if verbose:
+            print(f'Iteration {i} | update size: {update_size:4.3e} | cost: {f} |')
+        if callback is not None:
+            callback(i, w, f, update_size)
+        if save_costs:
+            costs[i] = f
+
+    if lr is None:
+        L = power_method_covmatr(X)
+        lr = 2/L
+    elif isinstance(lr, str):
+        L = power_method_covmatr(X)
+        lr = eval(lr)
     else:
-        new_callback = callback
-
+        pass
     if method == 'gd':
         if backtrack:
-            w = gd_with_backtrack(w0, cost.compute_cost, cost.compute_grad, prox=prox, callback=new_callback, **kwargs)
+            w = gd_with_backtrack(w0, cost.compute_cost, cost.compute_grad, prox=prox, callback=new_callback, max_iter=max_iter, **kwargs)
         else:
-            w = gd(w0, cost.compute_grad, prox=prox, callback=new_callback, **kwargs)
+            w = gd(w0, cost.compute_cost, cost.compute_grad, prox=prox, callback=new_callback, lr=lr, max_iter=max_iter, **kwargs)
     elif method == 'agd':
         if backtrack:
-            w = agd_with_backtrack(w0, cost.compute_cost, cost.compute_grad, prox=prox, callback=new_callback, **kwargs)
+            w = agd_with_backtrack(w0, cost.compute_cost, cost.compute_grad, prox=prox, callback=new_callback, max_iter=max_iter, **kwargs)
         else:
-            w = agd(w0, cost.compute_grad, prox=prox, callback=new_callback, **kwargs)
+            w = agd(w0, cost.compute_cost, cost.compute_grad, prox=prox, callback=new_callback, lr=lr, max_iter=max_iter, **kwargs)
     elif method == 'sgd':
         n_train = X.shape[0]
-        w = sgd(w0, cost.compute_grad, n_train, prox=prox, callback=new_callback, **kwargs)
+        w = sgd(w0, cost.compute_cost, cost.compute_grad, n_train, prox=prox, callback=new_callback, lr=lr, max_iter=max_iter,  **kwargs)
     elif method == 'saga':
         n_train = X.shape[0]
-        w = saga(w0, cost.compute_jac, n_train, prox=prox, callback=new_callback, **kwargs)
+        w = saga(w0, cost.compute_cost, cost.compute_jac, n_train, prox=prox, callback=new_callback, lr=lr, max_iter=max_iter, **kwargs)
     param, t = split_params(w)
-    return param, {}
+    return param, {'costs': costs}
 
 
 
 
+if __name__ == "__main__":
+    X = np.diag([1, 2, 3, 4])
 
+    max_norm = np.linalg.norm(X, axis=1) .max()
 
 # TODO:
 #   5. [ ] Add condition to verify optimality based on suboptimality
