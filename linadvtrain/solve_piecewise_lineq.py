@@ -17,64 +17,68 @@ def solve_quadratic_equation(aa, bb, cc):
     return sol1, sol2
 
 
-def solve_piecewise_lineq(coefs, t):
+def solve_piecewise_lineq(coefs, t, rho=1, delta=1, return_line=False):
     # Sort abs coeficients
     abs_coefs = np.abs(coefs)
-    b = np.sort(abs_coefs)
+    abs_coefs.sort()
 
-    if t > np.sum(b):
-        raise ValueError('t > np.sum(b), there is no solution')
+    if t > np.sum(abs_coefs):
+        raise ValueError('t > np.sum(coefs), there is no solution')
     # Get all the picewise segments.
     # Find the piecewise segments of the function
-    #     h(x) = sum_i(b[i] - x)_+
+    #     h(x) = sum_i(b[i] - rho * x)_+
     # These piecewise segments define the affine functions
-    #     fi(x) = -m[i] * x + c[i]
-    m = np.arange(len(b))[::-1] + 1
-    c = np.cumsum(b[::-1])[::-1]
+    #     fi(x) = - rho * m[i] * x + c[i]
+    m = np.arange(len(abs_coefs))[::-1] + 1
+    c = np.cumsum(abs_coefs[::-1])[::-1]
 
-    # Let g(x) = t / (1-x).
+    # break points b[i]
+    b = abs_coefs / rho
+    # Let g(x) = delta * t + x.
     # Evaluate  the functions fi and g in  in each breakpoint
     # Find the fist value for each fi(b[i]) < g(b[i]) and b[i]
     # the intersection will happen in the line segment corresponding to it
-    index = np.sum((-m * b + c) > (t + b))
-    # solve the equation (-m[i] * x + c[i]) = (x + t)
+    index = np.sum((- rho * m * b + c) > (delta * b + t))
+    # solve the equation (-rho * m[i] * x + c[i]) = (delta * x + t)
     if index < len(b):
-        s = (c[index] - t) / (m[index] + 1)
+        s = (c[index] - t) / (rho * m[index] + delta)
     else:
         s = - t
-    return s
+    if return_line:
+        return s, m[index], c[index]
+    else:
+        return s
 
 
-def compute_lhs(coefs,  s):
+def compute_lhs(coefs, s, rho=1):
     s = np.atleast_1d(s)
     coefs = np.atleast_1d(coefs)
-    lhs = pos(np.abs(coefs[None, :]) - s[:, None]).sum(axis=1)
+    lhs = pos(np.abs(coefs[None, :]) - rho * s[:, None]).sum(axis=1)
     return lhs
 
 
-def compute_rhs(t, s):
+def compute_rhs(t, s, delta=1):
     s = np.atleast_1d(s)
-    rhs = t + s
+    rhs = t + delta * s
     return rhs
 
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
-    coefs = np.array([1, 2, 3])
+    coefs = np.array([0.2, 0.3, 0.4])
+    delta = 0.5
+    rho = 2
 
-    b = np.array([1, 2, 3])
-    t = -1 * np.sum(b)
+    b = coefs
+    t = 0.01
 
     l = np.linspace(0, max([max(b), -t]), 50)
 
-    s = solve_piecewise_lineq(coefs, t)
+    s, m, c = solve_piecewise_lineq(coefs, t, rho, delta, return_line=True)
 
-    #s = solve_piecewise_lineq(coefs, t)
-
-    #assert(np.allclose(compute_lhs(coefs, s), compute_rhs(t, s)))
-
-    plt.plot(l, compute_lhs(coefs, l))
-    plt.plot(l, compute_rhs(t, l))
-    plt.plot(s, t + s , 's')
-    plt.ylim(min(-0.1, 1.1*t), 1.5* sum(np.abs(coefs)))
+    plt.plot(l, compute_lhs(coefs, l, rho))
+    plt.plot(l, compute_rhs(t, l, delta))
+    plt.plot(s, t + delta * s , 's')
+    plt.plot(l, -rho * m * l + c,)
+    plt.ylim(min(-0.1, 1.1*t), 1.5 * sum(np.abs(coefs)))
     plt.show()
