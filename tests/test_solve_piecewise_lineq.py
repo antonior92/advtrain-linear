@@ -19,6 +19,6 @@ import numpy as np
 def test_solvepiecewise_lineq(coefs, perc_t, rho, delta):
     t = perc_t * np.sum(np.abs(coefs))
     s = solve_piecewise_lineq(coefs, t, rho=rho, delta=delta)
-    assert (np.allclose(compute_lhs(coefs, s, rho=rho), compute_rhs(t, s, delta=delta)))
+    assert (np.allclose(compute_lhs(coefs, s, delta=delta), compute_rhs(t, s, rho=rho)))
 
 # TODO: think of the casse t is negative

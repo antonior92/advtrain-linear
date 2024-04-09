@@ -135,7 +135,6 @@ def agd_with_backtrack(np.ndarray[np.float64_t, ndim=1] w0, object compute_cost,
             if next_f <= quadratic_approx_f:
                 break
             else:
-                print(f'lr={lr}, f={f}, next_f={next_f}, quadratic_approx_f={quadratic_approx_f}')
                 lr = lr / decreasing_factor
         ti_next = (1 + np.sqrt(1 + 4 * ti * ti)) / 2
         look_ahead_w  = new_w  + momentum * (ti - 1) / ti_next * (new_w - w)
