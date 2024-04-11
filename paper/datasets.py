@@ -1,9 +1,10 @@
 import sklearn.model_selection
-from sklearn.datasets import load_diabetes
+from sklearn.datasets import load_diabetes, load_breast_cancer
 from ucimlrepo import fetch_ucirepo, list_available_datasets
 import numpy as np
 import pandas as pd
 import os
+from sklearn.datasets import fetch_openml
 
 def load_magic(input_folder='WEBSITE/DATA', output_phenotype='HET_2'):
     # You can download and extract the MAGIC dataset by
@@ -93,3 +94,35 @@ def heart_failure():
     y = dset.data.targets.values.flatten()
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, test_size=0.3)
     return normalize(X_train, X_test, y_train, y_test)
+
+
+# Classification datasets
+def breast_cancer():
+    X, y = load_breast_cancer(return_X_y=True)
+    X -= np.mean(X, axis=0)
+    X /= X.max(axis=0)  # Normalize each feature to be in [-1, 1], so adversarial training is fair
+    y = np.asarray(y, dtype=np.float64)
+    return X[:400], y[:400], X[400:], y[400:]
+
+def MNIST():
+    X, y = fetch_openml('mnist_784', parser='auto', return_X_y=True)
+    X = X.values.astype(np.float64)
+    X /= 255  # Normalize between [0, 1]
+    y = np.asarray(y == '9', dtype=np.float64)
+    return X[:60000], y[:60000], X[60000:], y[60000:]
+
+def MagicClassif():
+    X, y = load_magic(input_folder='../WEBSITE/DATA', output_phenotype='SH_1')
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, test_size=50, random_state=0)
+    X_mean = X_train.mean(axis=0)
+    X_std = X_train.std(axis=0)
+    X_train = (X_train - X_mean) / X_std
+    X_test = (X_test - X_mean) / X_std
+    return X_train, y_train, X_test, y_test
+
+
+if __name__ == "__main__":
+    X, y = load_magic(input_folder='../WEBSITE/DATA', output_phenotype='SH_1')
+
+
+

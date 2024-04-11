@@ -3,7 +3,7 @@ import numpy as np
 from linadvtrain.cvxpy_impl import compute_q
 from linadvtrain.solve_piecewise_lineq import solve_piecewise_lineq, pos
 from linadvtrain.first_order_methods import gd, agd, sgd, saga, gd_with_backtrack, agd_with_backtrack
-
+from linadvtrain.regression import get_radius
 def soft_threshold(x, threshold):
     return np.sign(x) * pos(np.abs(x) - threshold)
 
@@ -15,23 +15,22 @@ def merge_params(w, t):
 
 
 #  Implement gradient descent in adversarial training
-def projection(param, p=2):
-    """Euclidean projection into the set {(param, max_norm) | ||param||_q <= max_norm}
+def projection(param, p=2, rho=1, delta=1):
+    """Euclidean projection into the set {(param, max_norm) | delta * ||param||_q <=  rho * max_norm}
 
     The solution to the optimization problem:
-        min_(x,t) ||param - x||_2^2  + (max_norm - t)^2  s.t. ||x||_q <= t
+        min_(x,t) ||param - x||_2^2  + (max_norm - t)^2  s.t. delta * ||x||_q <=  rho * t
     """
     param, max_norm = split_params(param)
     norm_dual = np.linalg.norm(param, ord=compute_q(p))
-    if norm_dual > max_norm:
+    if delta * norm_dual > rho * max_norm:
         if p == 2:
-            new_max_norm = (norm_dual + max_norm) / 2
-            new_param = param * new_max_norm / norm_dual
+            new_max_norm = delta * (rho * norm_dual + delta * max_norm) / (delta**2 + rho**2)
+            new_param = param * (rho * new_max_norm) / (delta * norm_dual)
             return merge_params(new_param, np.abs(new_max_norm))
         elif p == np.inf:
-            threshold = solve_piecewise_lineq(param, max_norm)
-            return merge_params(soft_threshold(param, threshold), max_norm + threshold)
-
+            threshold = solve_piecewise_lineq(param, max_norm, delta=delta, rho=rho)
+            return merge_params(soft_threshold(param, threshold * delta), max_norm + rho * threshold)
     else:
         return merge_params(param, max_norm)
 
@@ -101,12 +100,17 @@ def lin_advclasif(X, y, adv_radius=None, p=2, verbose=False, method='gd', backtr
                   save_costs=True,  max_iter=1000, **kwargs):
     """Linear adversarial classification """
     if adv_radius is None:
-        adv_radius = 0.001
-    cost = CostFunction(X, y, adv_radius, p)
-    prox = lambda x: projection(x, p=p)
+        adv_radius = 'randn_zero'
+    if isinstance(adv_radius, str):
+        adv_radius = get_radius(X, y, adv_radius, p)
+    rho = 1/2 * np.sqrt(power_method_covmatr(X))
+    cost = CostFunction(X, y, rho, p)
+    prox = lambda x: projection(x, p=p, delta=adv_radius, rho=rho)
     w0 = np.zeros(cost.n_params + 1)
-    costs = np.empty(max_iter)
-    costs[:] = np.nan
+    costs = np.empty(max_iter + 1)
+    costs[0] = cost.compute_cost(w0)
+    costs[1:] = np.nan
+
 
     def new_callback(i, w, f, update_size):
         if verbose:
@@ -114,7 +118,7 @@ def lin_advclasif(X, y, adv_radius=None, p=2, verbose=False, method='gd', backtr
         if callback is not None:
             callback(i, w, f, update_size)
         if save_costs:
-            costs[i] = f
+            costs[i+1] = f
 
     if lr is None:
         L = power_method_covmatr(X)
@@ -124,6 +128,7 @@ def lin_advclasif(X, y, adv_radius=None, p=2, verbose=False, method='gd', backtr
         lr = eval(lr)
     else:
         pass
+
     if method == 'gd':
         if backtrack:
             w = gd_with_backtrack(w0, cost.compute_cost, cost.compute_grad, prox=prox, callback=new_callback, max_iter=max_iter, **kwargs)
@@ -142,8 +147,6 @@ def lin_advclasif(X, y, adv_radius=None, p=2, verbose=False, method='gd', backtr
         w = saga(w0, cost.compute_cost, cost.compute_jac, n_train, prox=prox, callback=new_callback, lr=lr, max_iter=max_iter, **kwargs)
     param, t = split_params(w)
     return param, {'costs': costs}
-
-
 
 
 if __name__ == "__main__":

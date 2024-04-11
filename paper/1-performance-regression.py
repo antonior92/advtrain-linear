@@ -69,7 +69,7 @@ if __name__ == '__main__':
     from linadvtrain.regression import lin_advregr
     import pandas as pd
 
-    plot = False
+    plot = True
     load_data = True
 
     # Compute performance

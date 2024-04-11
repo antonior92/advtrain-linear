@@ -1,4 +1,13 @@
+Performance:
+- [ ] Change the projection step to cython
+- [ ] Maybe change the jacobian computation to cython
+Improvements in the implementation
+- [ ] Better pre-conditioners
 - [ ] Implement Lipschitz sampling
-- [ ] Refactor classification.py porting the GD implementation to a separate file
-- [ ] Add time benchmark
-- [ ] Change the implementation to cython
+Examples improvements
+- [ ] Add performance of default for classificaiton
+- [ ] convergence for different datasets:
+    - [ ] MNIST
+    - [ ] ...
+    - [ ]
+- [ ] Figure out Figure 4
