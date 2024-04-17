@@ -1,43 +1,55 @@
 # %% Imports
 import numpy as np
+from numba import njit
 from linadvtrain.cvxpy_impl import compute_q
-from linadvtrain.solve_piecewise_lineq import solve_piecewise_lineq, pos
+from linadvtrain.solve_piecewise_lineq import solve_piecewise_lineq
 from linadvtrain.first_order_methods import gd, agd, sgd, saga, gd_with_backtrack, agd_with_backtrack
 from linadvtrain.regression import get_radius
-def soft_threshold(x, threshold):
-    return np.sign(x) * pos(np.abs(x) - threshold)
 
+@njit
+def soft_threshold(x, threshold):
+    return np.sign(x) * np.maximum(np.abs(x) - threshold, 0)
+
+@njit
 def split_params(params):
     return params[:-1], params[-1]
 
-def merge_params(w, t):
-    return np.hstack([w, t])
+@njit
+def merge_params(params, w, t):
+    params[:-1] = w
+    params[-1] = t
+    return params
+
 
 
 #  Implement gradient descent in adversarial training
-def projection(param, p=2, rho=1, delta=1):
+def projection(params_m, p=2, rho=1, delta=1):
     """Euclidean projection into the set {(param, max_norm) | delta * ||param||_q <=  rho * max_norm}
 
     The solution to the optimization problem:
         min_(x,t) ||param - x||_2^2  + (max_norm - t)^2  s.t. delta * ||x||_q <=  rho * t
     """
-    param, max_norm = split_params(param)
+    param, max_norm = split_params(params_m)
     norm_dual = np.linalg.norm(param, ord=compute_q(p))
     if delta * norm_dual > rho * max_norm:
         if p == 2:
             new_max_norm = delta * (rho * norm_dual + delta * max_norm) / (delta**2 + rho**2)
             new_param = param * (rho * new_max_norm) / (delta * norm_dual)
-            return merge_params(new_param, np.abs(new_max_norm))
+            return merge_params(params_m, new_param, np.abs(new_max_norm))
         elif p == np.inf:
-            threshold = solve_piecewise_lineq(param, max_norm, delta=delta, rho=rho)
-            return merge_params(soft_threshold(param, threshold * delta), max_norm + rho * threshold)
+            threshold, _m, _c = solve_piecewise_lineq(param, max_norm, delta=delta, rho=rho)
+            return merge_params(params_m, soft_threshold(param, threshold * delta), max_norm + rho * threshold)
     else:
-        return merge_params(param, max_norm)
+        return merge_params(params_m, param, max_norm)
 
 
+
+@njit
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
-
+@njit
+def compute_aux(V, w, t, adv_radius):
+    return sigmoid(V @ w - adv_radius * t)
 
 class CostFunction:
     def __init__(self, X, y, adv_radius, p):
@@ -46,13 +58,12 @@ class CostFunction:
         self.adv_radius = adv_radius
         self.q = compute_q(p)
         self.n_params = self.V.shape[1]
+        self.grad_buffer = np.zeros(self.n_params + 1)
 
-    def compute_aux(self, V, w, t):
-        return sigmoid(V @ w - self.adv_radius * t)
 
     def compute_cost(self, params):
         w, t = split_params(params)
-        aux = self.compute_aux(self.V, w, t)
+        aux = compute_aux(self.V, w, t, self.adv_radius)
         return 1 / self.n_train * np.sum(-np.log(aux))
 
     def compute_grad(self, params, indexes=None):
@@ -62,10 +73,10 @@ class CostFunction:
         else:
             indexes = np.random.permutation(indexes)
             Vi = self.V[indexes, :]
-        aux = self.compute_aux(Vi, w, t)
+        aux = compute_aux(Vi, w, t, self.adv_radius)
         grad_param = - 1 / self.n_train * Vi.T @ (1 - aux)
         grad_max_norm = 1 / self.n_train * self.adv_radius * np.sum(1 - aux)
-        return merge_params(grad_param, grad_max_norm)
+        return merge_params(self.grad_buffer, grad_param, grad_max_norm)
 
     def compute_jac(self, params, indexes=None):
         w, t = split_params(params)
@@ -73,10 +84,10 @@ class CostFunction:
             Vi = self.V
         else:
             Vi = self.V[indexes, :]
-        aux = self.compute_aux(Vi, w, t)
+        aux = compute_aux(Vi, w, t, self.adv_radius)
         jac_param = - (Vi.T * (1 - aux)).T
         jac_max_norm = self.adv_radius * (1 - aux)
-        return merge_params(jac_param, jac_max_norm[:, None])
+        return np.hstack([jac_param, jac_max_norm[:, None]])
 
 
 def power_method_covmatr(X, num_iterations: int = 10):
@@ -96,9 +107,10 @@ def power_method_covmatr(X, num_iterations: int = 10):
     return s
 
 
-def lin_advclasif(X, y, adv_radius=None, p=2, verbose=False, method='gd', backtrack=True, callback=None, lr=None,
+def lin_advclasif(X, y, adv_radius=None, p=2, verbose=False, method='agd', backtrack=True, callback=None, lr=None,
                   save_costs=True,  max_iter=1000, **kwargs):
     """Linear adversarial classification """
+
     if adv_radius is None:
         adv_radius = 'randn_zero'
     if isinstance(adv_radius, str):
@@ -110,7 +122,6 @@ def lin_advclasif(X, y, adv_radius=None, p=2, verbose=False, method='gd', backtr
     costs = np.empty(max_iter + 1)
     costs[0] = cost.compute_cost(w0)
     costs[1:] = np.nan
-
 
     def new_callback(i, w, f, update_size):
         if verbose:
@@ -147,7 +158,6 @@ def lin_advclasif(X, y, adv_radius=None, p=2, verbose=False, method='gd', backtr
         w = saga(w0, cost.compute_cost, cost.compute_jac, n_train, prox=prox, callback=new_callback, lr=lr, max_iter=max_iter, **kwargs)
     param, t = split_params(w)
     return param, {'costs': costs}
-
 
 if __name__ == "__main__":
     X = np.diag([1, 2, 3, 4])

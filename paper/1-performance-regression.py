@@ -24,18 +24,6 @@ def compute_R2(y_pred, y_test):
     y_mean = np.mean(y_test)
     return 1 - np.mean((y_test - y_pred) ** 2) / np.mean((y_test - y_mean) ** 2)
 
-def normalize(X_train, X_test, y_train, y_test):
-    X_mean = X_train.mean(axis=0)
-    X_std = X_train.std(axis=0)
-    X_train = (X_train - X_mean) / X_std
-    X_test = (X_test - X_mean) / X_std
-
-    y_mean = y_train.mean(axis=0)
-    y_std = y_train.std(axis=0)
-    y_train = (y_train - y_mean) / y_std
-    y_test = (y_test - y_mean) / y_std
-
-    return X_train, X_test, y_train, y_test
 
 # DATASET REGRESSION
 
@@ -74,7 +62,7 @@ if __name__ == '__main__':
 
     # Compute performance
     df = {}
-    for dset in []:
+    for dset in [diabetes, wine, abalone, heart_failure, ]:
         df[dset.__name__] = pd.DataFrame({'dset': [], 'method': [], 'y_pred': []})
         for method in [lasso_cv, advtrain]:
             X_train, X_test, y_train, y_test = dset()
@@ -90,11 +78,11 @@ if __name__ == '__main__':
 
     if load_data:
         df = {}
-        for dset in [diabetes, wine, abalone, heart_failure, magic]:
+        for dset in [diabetes, wine, abalone, heart_failure]:
             df[dset.__name__] = pd.read_csv(f'data/fig1(a){dset.__name__}.csv')
 
     df_final = pd.DataFrame({'dset': [], 'method': [], 'R2': []})
-    for dset in [heart_failure, diabetes, wine, abalone, magic]:
+    for dset in [heart_failure, diabetes, wine, abalone]:
         for method in [lasso_cv, advtrain]:
             df_aux = df[dset.__name__].loc[df[dset.__name__]['method'] == method.__name__]
 

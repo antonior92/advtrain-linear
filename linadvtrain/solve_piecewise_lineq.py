@@ -1,23 +1,11 @@
 import numpy as np
-
+from numba import njit
 
 def pos(x):
     return np.maximum(x, 0)
 
 
-def solve_quadratic_equation(aa, bb, cc):
-    """Solve quadratic equation
-
-    Solve the equation:
-        aa * x**2 + bb * x + cc == 0
-    """
-    delta = bb ** 2 - 4 * aa * cc
-    sol1 = (-bb + np.sqrt(delta)) / (2 * aa)
-    sol2 = (-bb - np.sqrt(delta)) / (2 * aa)
-    return sol1, sol2
-
-
-def solve_piecewise_lineq(coefs, t, delta=1, rho=1, return_line=False):
+def solve_piecewise_lineq(coefs, t, delta=1, rho=1):
     # Sort abs coeficients
     abs_coefs = np.abs(coefs)
     abs_coefs.sort()
@@ -42,12 +30,11 @@ def solve_piecewise_lineq(coefs, t, delta=1, rho=1, return_line=False):
     # solve the equation (-delta * m[i] * x + c[i]) = ((rho * rho/ delta) * x + (rho / delta) * t)
     if index < len(b):
         s = (c[index] - (rho / delta) * t) / (delta * m[index] + rho * rho / delta)
-    else:
-        s = - t
-    if return_line:
         return s, m[index], c[index]
     else:
-        return s
+        s = - t
+        return s, 0, 0
+
 
 
 def compute_lhs(coefs, s, delta=1):
@@ -70,11 +57,11 @@ if __name__ == "__main__":
     rho = 1
 
     b = coefs
-    t = 1
+    t = -1
 
     l = np.linspace(0, max([max(b), -t]), 50)
 
-    s, m, c = solve_piecewise_lineq(coefs, t, delta, rho,  return_line=True)
+    s, m, c = solve_piecewise_lineq(coefs, t, delta, rho)
 
     plt.plot(l, compute_lhs(coefs, l, delta))
     plt.plot(l, compute_rhs(t, l, rho, delta))

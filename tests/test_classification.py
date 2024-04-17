@@ -73,7 +73,7 @@ def test_linf(adv_radius):
 
 # -------- Lin Adv train --------- #
 @pytest.mark.parametrize("adv_radius", [0.1])
-def test_l2_sgd(adv_radius): # SGD does not converge in this case!
+def test_l2_sgd(adv_radius):  # SGD does not converge in this case!
     # Generate data
     X, y = get_data()
     n_train, n_params = X.shape

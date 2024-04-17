@@ -104,14 +104,14 @@ def breast_cancer():
     y = np.asarray(y, dtype=np.float64)
     return X[:400], y[:400], X[400:], y[400:]
 
-def MNIST():
-    X, y = fetch_openml('mnist_784', parser='auto', return_X_y=True)
+def mnist():
+    X, y = fetch_openml('mnist_784', return_X_y=True)
     X = X.values.astype(np.float64)
     X /= 255  # Normalize between [0, 1]
     y = np.asarray(y == '9', dtype=np.float64)
     return X[:60000], y[:60000], X[60000:], y[60000:]
 
-def MagicClassif():
+def magic_classif():
     X, y = load_magic(input_folder='../WEBSITE/DATA', output_phenotype='SH_1')
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, test_size=50, random_state=0)
     X_mean = X_train.mean(axis=0)

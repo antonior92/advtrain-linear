@@ -6,6 +6,7 @@ import linadvtrain.cvxpy_impl as cvxpy_impl
 import time
 from datasets import *
 
+
 # Basic style
 plt.style.use(['mystyle.mpl'])
 
@@ -29,18 +30,24 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     # Add argument for plotting
-    parser.add_argument('--name', choices=['fig2(a)', 'fig2(b)', 'fig2(c)', 'figMNIST', 'figMAGIC'], default='figMAGIC')
+    parser.add_argument('--dset', choices=['breast_cancer', 'mnist', 'magic_classif'], default='breast_cancer')
+    parser.add_argument('--setting', choices=['compare_lr', 'acceleration', 'stochastic'], default='compare_lr')
     parser.add_argument('--dont_plot', action='store_true', help='Enable plotting')
+    parser.add_argument('--dont_show', action='store_true', help='Enable plotting')
     parser.add_argument('--load_data', action='store_true', help='Enable data loading')
     args = parser.parse_args()
 
     adv_radius = 0.1
 
+
+    dset = eval(args.dset)
+    X, y, _x, _y = dset()
+
+    compare_with_cvxpy = args.dset in ['breast_cancer', ]  # dont compare for other datasets since they are too big
+
     # Fig 2(a)
-    if args.name == 'fig2(a)':
+    if args.setting == 'compare_lr':
         n_iter = 1000
-        X, y, _, _i = breast_cancer()
-        compare_with_cvxpy = True
         configs = [{'method': 'gd', 'backtrack': False, 'lr': '2/L'},
                    {'method': 'gd', 'backtrack': False, 'lr': '10/L'},
                    {'method': 'gd', 'backtrack': False, 'lr': '40/L'},
@@ -49,47 +56,24 @@ if __name__ == '__main__':
         labels = [r'lr = 2/$\lambda_{\mathrm{max}}$', 'lr = 10/$\lambda_{\mathrm{max}}$',
                      'lr = 40/$\lambda_{\mathrm{max}}$', 'lr = 160/$\lambda_{\mathrm{max}}$', 'Backtrack LS']
     # Fig 2(b)
-    elif args.name == 'fig2(b)':
+    elif args.setting == 'acceleration':
         n_iter = 100
-        X, y, _, _i = breast_cancer()
-        compare_with_cvxpy = True
         configs = [{'method': 'gd', 'backtrack': True},
                    {'method': 'agd', 'backtrack': True}]
         labels = ['GD', 'AGD']
 
     # Fig 2(c)
-    elif args.name == 'fig2(c)':
+    elif args.setting == 'stochastic':
         n_iter = 100
-        X, y, _, _i = breast_cancer()
-        compare_with_cvxpy = True
         configs = [{'method': 'gd', 'backtrack': True},
                    {'method': 'sgd', 'lr': '200/L'},
                    {'method': 'saga'}]
         labels = ['GD', 'SGD', 'SAGA']
 
-    elif args.name == 'figMNIST':
-        n_iter = 100
-        print('loading dataset...')
-        X, y, _, _i = MNIST()
-        print('loaded')
-        compare_with_cvxpy = False
-        configs = [{'method': 'agd'},
-                   {'method': 'saga'}]
-        labels = ['AGD', 'SAGA']
-
-    elif args.name == 'figMAGIC':
-        n_iter = 10000
-        print('loading dataset...')
-        X, y, _, _i = MagicClassif()
-        print('loaded')
-        compare_with_cvxpy = False
-        configs = [{'method': 'agd'}]
-        labels = ['AGD', 'SAGA']
-
 
     if args.load_data:
         print('loading data...')
-        fs = np.loadtxt(f'data/{args.name}.csv')
+        fs = np.loadtxt(f'data/{args.setting}_{args.dset}.csv')
         min_fs = np.inf
     else:
         if compare_with_cvxpy:
@@ -106,7 +90,7 @@ if __name__ == '__main__':
         print('start')
         fs = np.empty([len(configs), n_iter + 1])
         for ll, config in enumerate(configs):
-            print(f'config {ll}')
+            print(f'config {ll}, {config}')
             start_time = time.time()
             params, info = lin_advclasif(X, y, adv_radius=adv_radius,
                                          verbose=True, p=np.inf, max_iter=n_iter, **config)
@@ -114,7 +98,7 @@ if __name__ == '__main__':
             exec_time = time.time() - start_time
             fs[ll, :] = info['costs']
             print(ll, exec_time)
-        np.savetxt(f'data/{args.name}.csv', fs)
+        np.savetxt(f'data/{args.setting}_{args.dset}.csv', fs)
 
     if not args.dont_plot:
         colors = ['b', 'g', 'r', 'c', 'k']
@@ -126,7 +110,8 @@ if __name__ == '__main__':
         plt.yscale('log')
         plt.legend(loc='upper right')
         plt.xlabel('\# iter')
-        plt.ylim([1e-5, (fs[~np.isnan(fs)] - min_fs).max()])
+        plt.ylim([1e-8, (fs[~np.isnan(fs)] - min_fs).max()])
         plt.ylabel(r'$R^{(i)} - R_*$')
-        plt.savefig(f'imgs/{args.name}.pdf')
-        plt.show()
+        plt.savefig(f'imgs/{args.setting}_{args.dset}.pdf')
+        if not args.dont_show:
+            plt.show()
