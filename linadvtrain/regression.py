@@ -35,10 +35,11 @@ class RidgeCG():
             else:
                 out += reg * w_params * param
             return out
-        A = LinearOperator(matvec=f, shape=(self.n_params, self.n_params))
+
+        A = LinearOperator(matvec=f, shape=(self.n_params, self.n_params)) #X.T @ (np.diag(w_samples) @ X) + reg * D  # D = np.diag(w_params) if w_params is not None else np.eye(len(params0))
         b = X.T @ (w_samples * self.y)
 
-        params_cg = cg(A, b, params0, precond=precond, max_iter=max_iter)
+        params_cg = cg(A, b, params0, precond=precond, max_iter=max_iter) #np.linalg.solve(A, b) #
 
         return params_cg, {}
 
@@ -179,7 +180,8 @@ def get_radius(X, y, option, p):
 
 
 def lin_advregr(X, y, adv_radius=None, max_iter=100, verbose=False,
-                p=2, method='w-ridge', utol=1e-12, solver_params=None):
+                p=2, method='w-ridge', utol=1e-12, solver_params=None,
+                callback=None):
     """Linear adversarial regression.
 
     Parameters
@@ -203,6 +205,9 @@ def lin_advregr(X, y, adv_radius=None, max_iter=100, verbose=False,
         Tolerance for the update size.
     solver_params : dict, default=None
         Parameters passed to the solver.
+    callback: function,None default None
+        Function that is called every interation. It has the signature:
+            fun(i, params, train_loss)
 
     Returns
     -------
@@ -268,7 +273,9 @@ def lin_advregr(X, y, adv_radius=None, max_iter=100, verbose=False,
             mean_regul = np.mean(w_samples) * regul_correction if w_samples is not None else regul_correction
             print(f'Iteration {i} | update size: {update_size:4.3e} | regul: {mean_regul:4.3e} | '
                   f'param norm: {param_norm:4.3e} | mean abs error: {np.mean(abs_error):4.3e} | '
-                  f'loss: {np.mean((abs_error + adv_radius * param_norm) ** 2 )}')
+                  f'loss: {np.mean((abs_error + adv_radius * param_norm) ** 2)}')
+        if callback is not None:
+            callback(i, params_, np.mean((abs_error + adv_radius * param_norm) ** 2))
         info = {'w_params': w_params, 'w_samples': w_samples, 'regul_correction':regul_correction,
                 'update_size': update_size, 'n_iter': i}
         params = params_  # update parameters
