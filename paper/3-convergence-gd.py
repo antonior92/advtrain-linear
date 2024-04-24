@@ -41,7 +41,7 @@ if __name__ == '__main__':
 
 
     dset = eval(args.dset)
-    X, y, _x, _y = dset()
+    X, _x, y, _y = dset()
 
     compare_with_cvxpy = args.dset in ['breast_cancer', ]  # dont compare for other datasets since they are too big
 
