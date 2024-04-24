@@ -102,14 +102,14 @@ def breast_cancer():
     X -= np.mean(X, axis=0)
     X /= X.max(axis=0)  # Normalize each feature to be in [-1, 1], so adversarial training is fair
     y = np.asarray(y, dtype=np.float64)
-    return X[:400], y[:400], X[400:], y[400:]
+    return X[:400], X[400:], y[:400], y[400:]
 
 def mnist():
     X, y = fetch_openml('mnist_784', return_X_y=True)
     X = X.values.astype(np.float64)
     X /= 255  # Normalize between [0, 1]
     y = np.asarray(y == '9', dtype=np.float64)
-    return X[:60000], y[:60000], X[60000:], y[60000:]
+    return X[:60000], X[60000:], y[:60000], y[60000:]
 
 def magic_classif():
     X, y = load_magic(input_folder='../WEBSITE/DATA', output_phenotype='SH_1')
@@ -118,11 +118,16 @@ def magic_classif():
     X_std = X_train.std(axis=0)
     X_train = (X_train - X_mean) / X_std
     X_test = (X_test - X_mean) / X_std
-    return X_train, y_train, X_test, y_test
+    return X_train, X_test, y_train, y_test
 
-
-if __name__ == "__main__":
-    X, y = load_magic(input_folder='../WEBSITE/DATA', output_phenotype='SH_1')
+def iris():
+    X, y_ = fetch_openml(data_id=41078, return_X_y=True)
+    X = X.values
+    y = np.asarray(y_ == 'Iris-setosa', dtype=np.float64)
+    X -= np.mean(X, axis=0)
+    X /= X.max(axis=0)  # Normalize each feature to be in [-1, 1], so adversarial training is fair
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, test_size=50, random_state=0)
+    return X_train, X_test, y_train, y_test
 
 
 

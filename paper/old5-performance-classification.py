@@ -21,7 +21,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     dset = eval(args.dset)
-    X, y, X_test, y_test = dset()
+    X, X_test, y, y_test = iris()
 
     # Compute performance logistic regression
     clf = LogisticRegression(random_state=0, fit_intercept=False).fit(X, y)
@@ -29,10 +29,11 @@ if __name__ == "__main__":
     auc_lr = roc_auc_score(y_test, y_prob_lr)
 
     # Compute performance adv-training
-    get_radius(X, y, ad, p)
-    params, info = lin_advclasif(X, y, verbose=True, p=2, method='saga', max_iter=1000,
-                                 batch_size=200)
+    params, info = lin_advclasif(X, y, verbose=True, p=2, method='agd', max_iter=1000,
+                                  adv_radius=1e-10)
     y_prob_adv = sigmoid(X_test @ params)
+
+
     auc_adv = roc_auc_score(y_test, y_prob_adv)
     print(f'logistic={auc_lr}')
     print(f'advtrain={auc_adv}')
