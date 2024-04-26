@@ -33,7 +33,7 @@ if __name__ == '__main__':
     parser.add_argument('--dset', choices=['breast_cancer', 'mnist', 'magic_classif'], default='breast_cancer')
     parser.add_argument('--setting', choices=['compare_lr', 'acceleration', 'stochastic'], default='compare_lr')
     parser.add_argument('--dont_plot', action='store_true', help='Enable plotting')
-    parser.add_argument('--dont_show', action='store_true', help='Enable plotting')
+    parser.add_argument('--dont_show', action='store_true', help='dont show plot, but maybe save it')
     parser.add_argument('--load_data', action='store_true', help='Enable data loading')
     args = parser.parse_args()
 

@@ -105,23 +105,30 @@ def advclassif_linf(X_train, y_train):
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import seaborn as sns
-    #all_methods = [advtrain_linf, lasso_cv,  lasso, advtrain_l2, ridge, ridgecv, gboost, mlp]
-    #datasets = [diabetes, wine, abalone]
-    #tp = 'regression'
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--setting', choices=['regr', 'classif'], default='compare_lr')
+    parser.add_argument('--dont_plot', action='store_true', help='Enable plotting')
+    parser.add_argument('--dont_show', action='store_true', help='dont show plot, but maybe save it')
+    parser.add_argument('--load_data', action='store_true', help='Enable data loading')
+    args = parser.parse_args()
 
 
-    all_methods = [advclassif_linf, logistic]
-    tp = 'classification'
-    datasets = [breast_cancer, iris]
 
-
-    if tp == 'regression':
+    if args.setting == 'regr':
+        all_methods = [advtrain_linf, lasso_cv,  lasso, advtrain_l2, ridge, ridgecv, gboost, mlp]
+        datasets = [diabetes, wine, abalone, heart_failure]
+        tp = 'regression'
         metrics_names = ['RMSE', 'R2']
         metrics_of_interest = [root_mean_squared_error, r2_score]
         metric_show = 'R2'
         methods_to_show = ['advtrain_linf', 'lasso_cv']
         methods_name = ['Adv Train', 'Lasso CV']
-    elif tp == 'classification':
+    elif args.setting == 'classif':
+        all_methods = [advclassif_linf, logistic]
+        tp = 'classification'
+        datasets = [breast_cancer, iris]
         metrics_names = ['AUROC', 'AUPRC']
         metrics_of_interest = [roc_auc_score, average_precision_score]
         methods_to_show = ['advclassif_linf', 'logistic']
@@ -163,7 +170,7 @@ if __name__ == '__main__':
 
     df = pd.DataFrame(all_results, columns=columns_names)
 
-    df.to_csv(f'data/performace_regression.csv')
+    df.to_csv(f'data/performace_{args.setting}.csv')
 
     print(df)
 
@@ -190,5 +197,5 @@ if __name__ == '__main__':
     plt.ylabel(metric_show)
     plt.ylim((0, 1))
     plt.legend( title='')
-    plt.savefig('imgs/performace_regression.pdf')
+    plt.savefig(f'imgs/performace_{tp}.pdf')
     plt.show()

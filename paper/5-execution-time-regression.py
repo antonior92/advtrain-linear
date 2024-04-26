@@ -23,7 +23,7 @@ mpl.rcParams['figure.subplot.top'] = 0.95
 mpl.rcParams['font.size'] = 22
 mpl.rcParams['legend.fontsize'] = 20
 mpl.rcParams['legend.handlelength'] = 1
-mpl.rcParams['legend.handletextpad'] = 0.1
+mpl.rcParams['legend.handletextpad'] = 0.5
 mpl.rcParams['xtick.major.pad'] = 7
 
 
@@ -39,7 +39,7 @@ if __name__ == "__main__":
     for n_train in [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000,
                     1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000,
                     2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000]:
-        for rep in range(3):
+        for rep in range(5):
             n_params = int(0.1*n_train)
             X_train = rng.randn(n_train, n_params)
             beta = rng.randn(n_params)
@@ -52,7 +52,7 @@ if __name__ == "__main__":
             params, info = lin_advregr(X_train, y_train, adv_radius=adv_radius, max_iter=100, p=np.inf, method='w-ridge', utol=0)
             exec_time = time.time() - start_time
             df = df.append({
-                'method': 'irr',
+                'method': 'Cholesky',
                 'n_params': n_params,
                 'time': exec_time}, ignore_index=True)
 
@@ -61,7 +61,7 @@ if __name__ == "__main__":
             paramscg, info = lin_advregr(X_train, y_train, adv_radius=adv_radius,  p=np.inf, max_iter=100, method='w-cg', utol=0)
             exec_time = time.time() - start_time
             df = df.append({
-                'method': 'cg',
+                'method': 'CG',
                 'n_params': n_params,
                 'time': exec_time}, ignore_index=True)
 
@@ -69,9 +69,10 @@ if __name__ == "__main__":
 
 
     plt.figure()
-    sns.pointplot(data=df, x='n_params', y='time', hue='method', errorbar=None, native_scale=True,
-                  palette ='colorblind', estimator='median')
+    sns.pointplot(data=df, x='n_params', y='time', hue='method', errorbar=('pi', 95), native_scale=True,
+                  palette='colorblind', estimator='median')
+
     plt.xlabel('\# parameters')
     plt.legend(title='')
-    plt.savefig('imgs/fig3.pdf')
+    plt.savefig('imgs/execution_time_cg.pdf')
     plt.show()
