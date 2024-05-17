@@ -149,7 +149,7 @@ def sq_lasso(X, y, reg=0.01, max_iter=100, verbose=False, utol=1e-12, w_params_w
     return params, info
 
 
-def get_radius(X, y, option, p):
+def get_radius(X, y, option, p, seed=0, percentile=95):
     """Return the adversarial radius for which the zero solution is optimal.
 
     Parameters
@@ -168,10 +168,12 @@ def get_radius(X, y, option, p):
     if option == 'zero':
         return np.linalg.norm(X.T @ y, ord=p) / np.sum(np.abs(y))
     elif option == 'randn_zero':
-        n_realizations = 100
-        e = np.random.randn(X.shape[0], n_realizations)
+        n_realizations = 500
+        rng = np.random.RandomState(seed)
+        e = rng.randn(X.shape[0], n_realizations)
         adv_radius_est = np.mean(np.linalg.norm(X.T @ e, ord=p, axis=0) / np.sum(np.abs(e), axis=0))
-        return np.percentile(adv_radius_est, 50)  # return value such that 50% of the realizations will yield zero
+        print('bla')
+        return np.percentile(adv_radius_est, percentile)  # return value such that p % of the realizations will yield zero
     elif option == 'interp':
         min_norm = MinimumNorm(X, y, compute_q(p))
         return min_norm.adv_radius()

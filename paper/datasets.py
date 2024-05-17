@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import os
 from sklearn.datasets import fetch_openml
+from sklearn.preprocessing import LabelEncoder
 
 def load_magic(input_folder='WEBSITE/DATA', output_phenotype='HET_2'):
     # You can download and extract the MAGIC dataset by
@@ -75,7 +76,7 @@ def wine():
     dset = fetch_ucirepo(name="Wine Quality")
     X = dset.data.features.values
     y = dset.data.targets.values.flatten()
-    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, test_size=0.3)
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, test_size=0.3, random_state=0)
     return normalize(X_train, X_test, y_train, y_test)
 
 def abalone():
@@ -84,16 +85,91 @@ def abalone():
     F = F.assign(Sex=(F['Sex'] == 'M').values.astype(float))
     X = F.values
     y = dset.data.targets.values.flatten()
-    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, test_size=0.3)
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, test_size=0.3, random_state=0)
     return normalize(X_train, X_test, y_train, y_test)
 
-def heart_failure():
+def heartf():
     dset = fetch_ucirepo(name="Heart failure clinical records")
     F = dset.data.features
     X = F.values
     y = dset.data.targets.values.flatten()
-    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, test_size=0.3)
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, test_size=0.3, random_state=0)
     return normalize(X_train, X_test, y_train, y_test)
+
+
+def polution():
+    dset = fetch_openml(data_id=542)
+    X = dset['data'].values
+    y = dset['target'].values
+
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, test_size=0.3, random_state=0)
+    return normalize(X_train, X_test, y_train, y_test)
+
+def diamonds():
+    dset = fetch_openml(data_id=42225)
+    df = dset['data']
+    # Enocde Data
+    cat_col = ['cut', 'clarity', 'color']
+    le = LabelEncoder()
+    for col in cat_col:
+        df = df.assign(**{col: le.fit_transform(df[col])})
+
+    X = df.values
+    y = dset['target'].values
+
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, test_size=0.3, random_state=0)
+    return normalize(X_train, X_test, y_train, y_test)
+
+
+def qsar():
+    dset = fetch_openml(data_id=3277)
+    X = dset['data'].toarray()
+    y = dset['target']
+
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, test_size=0.3, random_state=0)
+    return normalize(X_train, X_test, y_train, y_test)
+
+
+def gaussian(n_train, n_test, n_params, seed=1, noise_std=0.1):
+    rng = np.random.RandomState(seed)
+    X_train = rng.randn(n_train, n_params)
+    X_test = rng.randn(n_test, n_params)
+    beta = 1 / np.sqrt(n_params) * rng.randn(n_params)
+    y_train = X_train @ beta + noise_std * rng.randn(n_train)
+    y_test = X_test @ beta + noise_std * rng.randn(n_test)
+    return X_train, X_test, y_train, y_test
+
+def sparse_gaussian(n_train, n_test, n_params, non_zeros=10, seed=1, noise_std=0.1, parameter_norm=1):
+    rng = np.random.RandomState(seed)
+    X_train = rng.randn(n_train, n_params)
+    X_test = rng.randn(n_test, n_params)
+    beta = np.zeros(n_params)
+    ind = rng.choice(n_params, non_zeros, replace=False)
+    beta[ind] = parameter_norm / np.sqrt(non_zeros) * rng.randn(non_zeros)
+    y_train = X_train @ beta + noise_std * rng.randn(n_train)
+    y_test = X_test @ beta + noise_std * rng.randn(n_test)
+    return X_train, X_test, y_train, y_test
+
+
+def generate_random_ortogonal(p, d, rng):
+    """Generate random W with shape (p, d) such that `W.T W = p / d I_d`."""
+    aux = rng.randn(p, d)
+    q, r = np.linalg.qr(aux, mode='reduced')
+    return q
+def latent_features(n_train, n_test, n_params, n_latent=1, seed=1, noise_std=0.1, parameter_norm=1):
+    rng = np.random.RandomState(seed)
+    factor = np.sqrt(n_params / n_latent)
+    theta = parameter_norm / np.sqrt(n_latent) * rng.randn(n_latent)
+    w = factor * generate_random_ortogonal(n_params, n_latent, rng)
+    z = rng.randn(n_train+n_test, n_latent)
+    u = rng.randn(n_train+n_test, n_params)
+    e = rng.randn(n_train+n_test)
+    y = z @ theta + noise_std * e
+    X = z @ w.T + u
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, test_size=n_test)
+    return X_train, X_test, y_train, y_test
+
+
 
 
 # Classification datasets
@@ -128,6 +204,5 @@ def iris():
     X /= X.max(axis=0)  # Normalize each feature to be in [-1, 1], so adversarial training is fair
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, test_size=50, random_state=0)
     return X_train, X_test, y_train, y_test
-
 
 

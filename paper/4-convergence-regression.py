@@ -28,15 +28,28 @@ mpl.rcParams['xtick.major.pad'] = 7
 
 
 if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    # Add argument for plotting
+    parser.add_argument('--dset', choices=['abalone', 'wine', 'magic', 'diabetes'], default='abalone')
+    parser.add_argument('--dont_plot', action='store_true', help='Enable plotting')
+    parser.add_argument('--dont_show', action='store_true', help='dont show plot, but maybe save it')
+    parser.add_argument('--load_data', action='store_true', help='Enable data loading')
+    parser.add_argument('--n_iter', type=int, default=100)
+    args = parser.parse_args()
+
+
     n_iter = 100
     min_fs = np.inf
     configs = [{'method': 'w-ridge'},
                {'method': 'w-cg'}]
 
     labels = [r'Cholesky', 'CG']
-    X_train, X_test, y_train, y_test = abalone()
-    adv_radius = get_radius(X_train, y_train, p=np.inf, option='randn_zero')
-
+    dset = eval(args.dset)
+    X_train, X_test, y_train, y_test = dset()
+    adv_radius = get_radius(X_train, y_train, 'randn_zero', np.Inf)
 
     mdl = cvxpy_impl.AdversarialRegression(X_train, y_train, p=np.inf)
     params_cvxpy = mdl(adv_radius=adv_radius, verbose=False)
@@ -50,20 +63,23 @@ if __name__ == "__main__":
             fs[ll, i] = loss
 
         params, info = lin_advregr(X_train, y_train, adv_radius=adv_radius, verbose=True, p=np.inf,
-                                   callback=cb, max_iter=n_iter, **config)
+                                   callback=cb, max_iter=args.n_iter, **config)
 
 
     colors = ['b', 'g', 'r', 'c', 'k']
     linestyle = ['-', '-', ':', ':', '-']
     plt.figure()
     for i in range(fs.shape[0]):
-        plt.plot(range(n_iter + 1), fs[i, :] - min_fs, label=labels[i], color=colors[i], ls=linestyle[i])
+        plt.plot(range(fs.shape[1]), fs[i, :] - min_fs, label=labels[i], color=colors[i], ls=linestyle[i])
     plt.yscale('log')
     plt.legend(loc='upper right')
     plt.xlabel('\# iter')
+    plt.xlim([-1, np.minimum(args.n_iter, fs.shape[1]) + 1])
     plt.ylim([1e-8, (fs[~np.isnan(fs)] - min_fs).max()])
     plt.ylabel(r'$R^{(i)} - R_*$')
-    plt.savefig('imgs/convergence_cg.pdf')
+
+    plt.savefig(f'imgs/convergence_cg_{args.dset}.pdf')
+
     plt.show()
 
 

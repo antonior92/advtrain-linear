@@ -7,7 +7,7 @@ import matplotlib as mpl
 import seaborn as sns
 import time
 import matplotlib.pyplot as plt
-from linadvtrain.regression import lin_advregr
+from linadvtrain.regression import lin_advregr, get_radius
 from  sklearn import ensemble, neural_network
 
 from sklearn.metrics import (r2_score, root_mean_squared_error, mean_absolute_percentage_error, roc_auc_score,
@@ -19,14 +19,13 @@ plt.style.use(['mystyle.mpl'])
 
 # Additional style
 mpl.rcParams['figure.figsize'] = 7, 3
-mpl.rcParams['figure.subplot.bottom'] = 0.15
-mpl.rcParams['figure.subplot.right'] = 0.99
+mpl.rcParams['figure.subplot.bottom'] = 0.25
+mpl.rcParams['figure.subplot.right'] = 0.97
 mpl.rcParams['figure.subplot.top'] = 0.95
 mpl.rcParams['font.size'] = 22
 mpl.rcParams['legend.fontsize'] = 20
 mpl.rcParams['legend.handlelength'] = 1
 mpl.rcParams['legend.handletextpad'] = 0.3
-mpl.rcParams['xtick.major.pad'] = 7
 
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
@@ -108,7 +107,7 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--setting', choices=['regr', 'classif'], default='compare_lr')
+    parser.add_argument('--setting', choices=['regr', 'classif'], default='regr')
     parser.add_argument('--dont_plot', action='store_true', help='Enable plotting')
     parser.add_argument('--dont_show', action='store_true', help='dont show plot, but maybe save it')
     parser.add_argument('--load_data', action='store_true', help='Enable data loading')
@@ -118,11 +117,12 @@ if __name__ == '__main__':
 
     if args.setting == 'regr':
         all_methods = [advtrain_linf, lasso_cv,  lasso, advtrain_l2, ridge, ridgecv, gboost, mlp]
-        datasets = [diabetes, wine, abalone, heart_failure]
+        datasets = [diabetes, wine, abalone, heartf, polution, diamonds]
         tp = 'regression'
         metrics_names = ['RMSE', 'R2']
         metrics_of_interest = [root_mean_squared_error, r2_score]
         metric_show = 'R2'
+        ylabel = '$$R^2$$'
         methods_to_show = ['advtrain_linf', 'lasso_cv']
         methods_name = ['Adv Train', 'Lasso CV']
     elif args.setting == 'classif':
@@ -134,6 +134,7 @@ if __name__ == '__main__':
         methods_to_show = ['advclassif_linf', 'logistic']
         methods_name = ['Adv Train', 'Logistic']
         metric_show = 'AUROC'
+        ylabel = metric_show
 
     columns_names = ['dset', 'method'] + metrics_names + \
                     [nn + q for nn in metrics_names for q in ['q1', 'q3']] +\
@@ -183,6 +184,11 @@ if __name__ == '__main__':
         print(ddf.to_latex(columns=[m.__name__ for m in all_methods], float_format="%.2f"))
 
     # Plot figure
+    from matplotlib import ticker
+
+    mpl.rcParams['xtick.major.pad'] = 7
+    mpl.rcParams['xtick.minor.pad'] = 25
+    mpl.rcParams['xtick.direction'] = 'in'
     fig, ax = plt.subplots()
     width = 0.35
     ind = np.arange(len(datasets))
@@ -194,8 +200,22 @@ if __name__ == '__main__':
         rects1 = ax.bar(ii,  ddf[metric_show], width, yerr=y_err, label=methods_name[i])
 
     plt.xticks(range(len(datasets)), [d.__name__ for d in datasets])
-    plt.ylabel(metric_show)
+    plt.ylabel(ylabel)
     plt.ylim((0, 1))
     plt.legend( title='')
+
+    ax = plt.gca()
+    major_names = [d.__name__ for i, d in enumerate(datasets) if i % 2 == 0]
+    minor_names = [d.__name__ for i, d in enumerate(datasets) if i % 2 == 1]
+    major_loc = [i for i, d in enumerate(datasets) if i % 2 == 0]
+    minor_loc = [i for i, d in enumerate(datasets) if i % 2 == 1]
+    ax.xaxis.set_major_locator(ticker.FixedLocator(major_loc))
+    ax.xaxis.set_minor_locator(ticker.FixedLocator(minor_loc))
+    ax.xaxis.set_minor_formatter(ticker.FixedFormatter(major_names))
+    ax.xaxis.set_minor_formatter(ticker.FixedFormatter(minor_names))
+    ax.tick_params(axis='x', which='minor', length=-200)
+    ax.tick_params(axis='x', which='both', color='lightgrey')
+    ax.autoscale(enable=True, axis='x', tight=True)
+
     plt.savefig(f'imgs/performace_{tp}.pdf')
     plt.show()

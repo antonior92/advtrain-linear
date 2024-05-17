@@ -14,7 +14,7 @@ plt.style.use(['mystyle.mpl'])
 mpl.rcParams['figure.figsize'] = 7, 3
 mpl.rcParams['figure.subplot.left'] = 0.17
 mpl.rcParams['figure.subplot.bottom'] = 0.23
-mpl.rcParams['figure.subplot.right'] = 0.99
+mpl.rcParams['figure.subplot.right'] = 0.95
 mpl.rcParams['figure.subplot.top'] = 0.95
 mpl.rcParams['font.size'] = 22
 mpl.rcParams['legend.fontsize'] = 18
@@ -35,6 +35,7 @@ if __name__ == '__main__':
     parser.add_argument('--dont_plot', action='store_true', help='Enable plotting')
     parser.add_argument('--dont_show', action='store_true', help='dont show plot, but maybe save it')
     parser.add_argument('--load_data', action='store_true', help='Enable data loading')
+    parser.add_argument('--n_iter', type=int, default=100)
     args = parser.parse_args()
 
     adv_radius = 0.1
@@ -47,24 +48,20 @@ if __name__ == '__main__':
 
     # Fig 2(a)
     if args.setting == 'compare_lr':
-        n_iter = 1000
         configs = [{'method': 'gd', 'backtrack': False, 'lr': '2/L'},
                    {'method': 'gd', 'backtrack': False, 'lr': '10/L'},
                    {'method': 'gd', 'backtrack': False, 'lr': '40/L'},
-                   {'method': 'gd', 'backtrack': False, 'lr': '160/L'},
                    {'method': 'gd', 'backtrack': True}]
         labels = [r'lr = 2/$\lambda_{\mathrm{max}}$', 'lr = 10/$\lambda_{\mathrm{max}}$',
-                     'lr = 40/$\lambda_{\mathrm{max}}$', 'lr = 160/$\lambda_{\mathrm{max}}$', 'Backtrack LS']
+                     'lr = 40/$\lambda_{\mathrm{max}}$', 'Backtrack LS']
     # Fig 2(b)
     elif args.setting == 'acceleration':
-        n_iter = 100
         configs = [{'method': 'gd', 'backtrack': True},
                    {'method': 'agd', 'backtrack': True}]
         labels = ['GD', 'AGD']
 
     # Fig 2(c)
     elif args.setting == 'stochastic':
-        n_iter = 100
         configs = [{'method': 'gd', 'backtrack': True},
                    {'method': 'sgd', 'lr': '200/L'},
                    {'method': 'saga'}]
@@ -88,12 +85,12 @@ if __name__ == '__main__':
             min_fs = np.inf
 
         print('start')
-        fs = np.empty([len(configs), n_iter + 1])
+        fs = np.empty([len(configs), args.n_iter + 1])
         for ll, config in enumerate(configs):
             print(f'config {ll}, {config}')
             start_time = time.time()
             params, info = lin_advclasif(X, y, adv_radius=adv_radius,
-                                         verbose=True, p=np.inf, max_iter=n_iter, **config)
+                                         verbose=True, p=np.inf, max_iter=args.n_iter, **config)
             print(info)
             exec_time = time.time() - start_time
             fs[ll, :] = info['costs']
@@ -101,16 +98,17 @@ if __name__ == '__main__':
         np.savetxt(f'data/{args.setting}_{args.dset}.csv', fs)
 
     if not args.dont_plot:
-        colors = ['b', 'g', 'r', 'c', 'k']
-        linestyle = [':', ':', ':', ':', '-']
+        colors = ['b', 'g', 'r', 'k']
+        linestyle = [':', ':', ':', '-']
         plt.figure()
         min_fs = min(fs[~np.isnan(fs)].min(), min_fs)
         for i in range(fs.shape[0]):
-            plt.plot(range(n_iter+1), fs[i, :] - min_fs, label=labels[i], color=colors[i], ls=linestyle[i])
+            plt.plot(range(fs.shape[1]), fs[i, :] - min_fs, label=labels[i], color=colors[i], ls=linestyle[i])
         plt.yscale('log')
         plt.legend(loc='upper right')
         plt.xlabel('\# iter')
         plt.ylim([1e-8, (fs[~np.isnan(fs)] - min_fs).max()])
+        plt.xlim([-1, np.minimum(args.n_iter, fs.shape[1]) + 10])
         plt.ylabel(r'$R^{(i)} - R_*$')
         plt.savefig(f'imgs/{args.setting}_{args.dset}.pdf')
         if not args.dont_show:
