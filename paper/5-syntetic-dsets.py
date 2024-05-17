@@ -87,7 +87,7 @@ if __name__ == "__main__":
     # Add argument for plotting
     parser.add_argument('--setting', choices=['spiked_covariance', 'sparse_gaussian', 'gaussian_overp',
                                             'comparing_advtrain_linf_methods'], default='comparing_advtrain_linf_methods')
-    parser.add_argument('--plot_type', choices=['R2', 'time'], default='time')
+    parser.add_argument('--plot_type', choices=['R-squared', 'time'], default='R-squared')
     parser.add_argument('--dont_plot', action='store_true', help='Enable plotting')
     parser.add_argument('--dont_show', action='store_true', help='dont show plot, but maybe save it')
     parser.add_argument('--load_data', action='store_true', help='Enable data loading')
@@ -100,6 +100,7 @@ if __name__ == "__main__":
     if args.setting == 'spiked_covariance':
         xlabel = r'\# components / \# features'
         all_methods = [advtrain_linf, lasso_cv]
+        mylabels = ['Adv Train', 'Lasso CV']
         configs = np.linspace(1 / args.n_points, 1, args.n_points)
         def dset(alpha):
             n_train = 500
@@ -107,8 +108,9 @@ if __name__ == "__main__":
             n_latent = int(np.ceil(alpha * n_params))
             return latent_features(n_train, n_test, n_params, seed=rep, n_latent=n_latent, noise_std=0.1)
     elif args.setting == 'sparse_gaussian':
-        xlabel = r'density'
+        xlabel = r'parameter density'
         all_methods = [advtrain_linf, lasso_cv]
+        mylabels = ['Adv Train', 'Lasso CV']
         configs = np.linspace(1 / args.n_points, 1, args.n_points)
         def dset(alpha):
             n_train = 500
@@ -118,6 +120,7 @@ if __name__ == "__main__":
     elif args.setting == 'gaussian_overp':
         xlabel = r'\# features / \# samples'
         all_methods = [advtrain_linf, lasso_cv]
+        mylabels = ['Adv Train', 'Lasso CV']
         configs = np.linspace(1 / args.n_points, 2, args.n_points)
         def dset(alpha):
             n_train = 500
@@ -126,6 +129,7 @@ if __name__ == "__main__":
     elif args.setting == 'gaussian_sparse_overp':
         xlabel = r'\# features / \# samples'
         all_methods = [advtrain_linf, lasso_cv]
+        mylabels = ['Adv Train', 'Lasso CV']
         configs = np.linspace(1 / args.n_points, 2, args.n_points)
         def dset(alpha):
             n_train = 500
@@ -134,6 +138,7 @@ if __name__ == "__main__":
     elif args.setting == 'spiked_covariance_overp':
         xlabel = r'\# features / \# samples'
         all_methods = [advtrain_linf, lasso_cv]
+        mylabels = ['Adv Train', 'Lasso CV']
         configs = np.linspace(1 / args.n_points, 2, args.n_points)
         def dset(alpha):
             n_train = 500
@@ -142,6 +147,7 @@ if __name__ == "__main__":
     elif args.setting == 'comparing_advtrain_linf_methods':
         xlabel = r'\# samples'
         all_methods = [cholesky, cg]
+        mylabels = ['Cholesky', 'CG']
         configs = np.arange(1, args.n_points) * 1000
         def dset(alpha):
             n_train = int(alpha)
@@ -149,13 +155,14 @@ if __name__ == "__main__":
             print(n_train, n_params)
             return gaussian(n_train, n_test, n_params, seed=rep, noise_std=0.1)
 
+
     if args.load_data:
         print('loading data...')
         df = pd.read_csv(f'data/{args.setting}.csv')
     else :
         n_test = 500
         all_results = {'methods':  [''] * args.n_reps * len(configs) * len(all_methods),
-                       'R2': np.zeros(args.n_reps * len(configs) * len(all_methods)),
+                       'R-squared': np.zeros(args.n_reps * len(configs) * len(all_methods)),
                        'alpha': np.zeros(args.n_reps * len(configs) * len(all_methods)),
                        'time': np.zeros(args.n_reps * len(configs) * len(all_methods))}
         i = 0
@@ -169,7 +176,7 @@ if __name__ == "__main__":
                     params = method(X_train, y_train)
                     exec_time = time.time() - start_time
                     y_pred = X_test @ params
-                    all_results['R2'][i] = r2_score(y_test, y_pred)
+                    all_results['R-squared'][i] = r2_score(y_test, y_pred)
                     all_results['time'][i] = exec_time
                     all_results['alpha'][i] = alpha
                     all_results['methods'][i] = method.__name__
@@ -181,10 +188,10 @@ if __name__ == "__main__":
         fig, ax = plt.subplots()
         c = ['red', 'blue']
         for i, m in enumerate(all_methods):
-            plot_errorbar(df[df['methods'] == m.__name__], 'alpha', args.plot_type, ax, m.__name__, color=c[i])
+            plot_errorbar(df[df['methods'] == m.__name__], 'alpha',  args.plot_type, ax, mylabels[i], color=c[i])
         plt.ylabel(args.plot_type)
         plt.xlabel(xlabel)
-        if args.plot_type == 'R2':
+        if args.plot_type == 'R-squared':
             plt.ylim((0, 1))
         plt.legend()
         plt.savefig('imgs/' + args.setting + '.pdf')

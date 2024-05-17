@@ -56,10 +56,10 @@ python 5-syntetic-dsets.py --setting comparing_advtrain_linf_methods --dont_plot
 python 5-syntetic-dsets.py --setting comparing_advtrain_linf_methods --plot_type time --load_data
 
 # ----------------------------
-# --- Figure 5 + S.1 + S.2 ---
+# --- Figure 5  ---
 # ----------------------------
 for SETTING in spiked_covariance sparse_gaussian;
-  do python 5-syntetic-dsets.py  --setting $SETTING
+  do python 5-syntetic-dsets.py  --setting $SETTING  --dont_show
 done;
 
 # ------------------

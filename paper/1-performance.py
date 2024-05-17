@@ -122,7 +122,7 @@ if __name__ == '__main__':
         metrics_names = ['RMSE', 'R2']
         metrics_of_interest = [root_mean_squared_error, r2_score]
         metric_show = 'R2'
-        ylabel = '$$R^2$$'
+        ylabel = 'R-squared'
         methods_to_show = ['advtrain_linf', 'lasso_cv']
         methods_name = ['Adv Train', 'Lasso CV']
     elif args.setting == 'classif':
