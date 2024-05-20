@@ -52,7 +52,7 @@ python 4-convergence-regression.py --dset diabetes --n_iter 100
 # --- Figure 4 bottom ---
 # -----------------------
 # now running on Hyperion (screen  253869.time-eval)
-python 5-syntetic-dsets.py --setting comparing_advtrain_linf_methods --dont_plot --n_points 30
+python 5-syntetic-dsets.py --setting comparing_advtrain_linf_methods --dont_plot --n_points 30 --increasing_scale 1000
 python 5-syntetic-dsets.py --setting comparing_advtrain_linf_methods --plot_type time --load_data
 
 # ----------------------------
@@ -71,3 +71,11 @@ done;
 # --- Figure S.2 ---
 # ------------------
 python 1-performance.py --setting classif
+
+
+# ------------------
+# --- Figure S.3 ---
+# ------------------
+# now running on Hyperion (screen  253869.time-eval)
+python 5-syntetic-dsets.py --setting comparing_advtrain_linf_methods_classif --dont_plot --n_points 10 --increasing_scale 50
+python 5-syntetic-dsets.py --setting comparing_advtrain_linf_methods_classif --plot_type time --load_data

@@ -169,8 +169,14 @@ def latent_features(n_train, n_test, n_params, n_latent=1, seed=1, noise_std=0.1
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, test_size=n_test)
     return X_train, X_test, y_train, y_test
 
-
-
+def gaussian_classification(n_train, n_test, n_params, seed=1, noise_std=0.1, parameter_norm=1):
+    rng = np.random.RandomState(seed)
+    X_train = rng.randn(n_train, n_params)
+    X_test = rng.randn(n_test, n_params)
+    beta = 1 / np.sqrt(n_params) * rng.randn(n_params)
+    y_train = (np.sign(X_train @ beta + noise_std * rng.randn(n_train)) + 1) / 2
+    y_test = (np.sign(X_test @ beta + noise_std * rng.randn(n_test)) + 1) / 2
+    return X_train, X_test, y_train.astype(int), y_test.astype(int)
 
 # Classification datasets
 def breast_cancer():
@@ -206,3 +212,5 @@ def iris():
     return X_train, X_test, y_train, y_test
 
 
+if __name__ == "__main__":
+    X_train, X_test, y_train, y_test = gaussian_classification(100, 10, 100)

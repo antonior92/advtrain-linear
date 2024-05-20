@@ -42,6 +42,21 @@ def advtrain_linf(X_train, y_train):
     estimated_params, info = lin_advregr(X_train, y_train, p=np.inf)
     return estimated_params
 
+
+def gd_linf(X_train, y_train):
+    estimated_params, info = lin_advclasif(X_train, y_train, adv_radius=0.01, p=np.inf, max_iter=10, utol=0, method='gd')
+    return estimated_params
+
+def agd_linf(X_train, y_train):
+    estimated_params, info = lin_advclasif(X_train, y_train, adv_radius=0.01, p=np.inf, max_iter=10, utol=0, method='agd')
+    return estimated_params
+
+def sgd_linf(X_train, y_train):
+    estimated_params, info = lin_advclasif(X_train, y_train, adv_radius=0.01, p=np.inf, max_iter=10, utol=0, method='sgd')
+    return estimated_params
+def saga_linf(X_train, y_train):
+    estimated_params, info = lin_advclasif(X_train, y_train, adv_radius=0.01, p=np.inf, max_iter=10, utol=0, method='saga')
+    return estimated_params
 def cg(X_train, y_train):
     adv_radius = get_radius(X_train, y_train, p=np.inf, option='randn_zero')
     estimated_params, info = lin_advregr(X_train, y_train, adv_radius=adv_radius, max_iter=100, p=np.inf, method='w-cg', utol=0)
@@ -86,13 +101,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # Add argument for plotting
     parser.add_argument('--setting', choices=['spiked_covariance', 'sparse_gaussian', 'gaussian_overp',
-                                            'comparing_advtrain_linf_methods'], default='comparing_advtrain_linf_methods')
+                                            'comparing_advtrain_linf_methods', 'comparing_advtrain_linf_methods_classif'],
+                        default='comparing_advtrain_linf_methods_classif')
     parser.add_argument('--plot_type', choices=['R-squared', 'time'], default='R-squared')
     parser.add_argument('--dont_plot', action='store_true', help='Enable plotting')
     parser.add_argument('--dont_show', action='store_true', help='dont show plot, but maybe save it')
     parser.add_argument('--load_data', action='store_true', help='Enable data loading')
     parser.add_argument('--n_reps', type=int, default=5)
     parser.add_argument('--n_points', type=int, default=10)
+    parser.add_argument('--increasing_scale', type=int, default=100)
 
     args = parser.parse_args()
 
@@ -148,12 +165,23 @@ if __name__ == "__main__":
         xlabel = r'\# samples'
         all_methods = [cholesky, cg]
         mylabels = ['Cholesky', 'CG']
-        configs = np.arange(1, args.n_points) * 1000
+        configs = np.arange(1, args.n_points) * args.increasing_scale
         def dset(alpha):
             n_train = int(alpha)
             n_params = int(0.1 * n_train)
             print(n_train, n_params)
             return gaussian(n_train, n_test, n_params, seed=rep, noise_std=0.1)
+    elif args.setting == 'comparing_advtrain_linf_methods_classif':
+        xlabel = r'\# samples'
+
+        all_methods = [gd_linf, agd_linf, sgd_linf, saga_linf]
+        mylabels = ['GD', 'AGD', 'SGD', 'SAGA']
+        configs = np.arange(1, args.n_points) * args.increasing_scale
+        def dset(alpha):
+            n_train = int(alpha)
+            n_params = int(0.1 * n_train)
+            print(n_train, n_params)
+            return gaussian_classification(n_train, n_test, n_params, seed=rep, noise_std=0.1)
 
 
     if args.load_data:
@@ -171,7 +199,8 @@ if __name__ == "__main__":
                 X_train, X_test, y_train, y_test = dset(alpha)
                 n_train, n_params = X_train.shape
                 # Test dimension
-                for method in all_methods:
+                for n, method in zip(mylabels, all_methods):
+                    print(n)
                     start_time = time.time()
                     params = method(X_train, y_train)
                     exec_time = time.time() - start_time
@@ -179,20 +208,21 @@ if __name__ == "__main__":
                     all_results['R-squared'][i] = r2_score(y_test, y_pred)
                     all_results['time'][i] = exec_time
                     all_results['alpha'][i] = alpha
-                    all_results['methods'][i] = method.__name__
+                    all_results['methods'][i] = n
                     i += 1
         df = pd.DataFrame(all_results)
         df.to_csv(f'data/{args.setting}.csv')
 
     if not args.dont_plot:
         fig, ax = plt.subplots()
-        c = ['red', 'blue']
+        c = ['red', 'blue', 'green', 'cyan']
         for i, m in enumerate(all_methods):
-            plot_errorbar(df[df['methods'] == m.__name__], 'alpha',  args.plot_type, ax, mylabels[i], color=c[i])
+            plot_errorbar(df[df['methods'] == mylabels[i]], 'alpha',  args.plot_type, ax, mylabels[i], color=c[i])
         plt.ylabel(args.plot_type)
         plt.xlabel(xlabel)
         if args.plot_type == 'R-squared':
             plt.ylim((0, 1))
+        plt.yscale('log')
         plt.legend()
         plt.savefig('imgs/' + args.setting + '.pdf')
         if not args.dont_show:
