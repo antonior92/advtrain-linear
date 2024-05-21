@@ -20,7 +20,7 @@ plt.style.use(['mystyle.mpl'])
 # Additional style
 mpl.rcParams['figure.figsize'] = 7, 3
 mpl.rcParams['figure.subplot.bottom'] = 0.25
-mpl.rcParams['figure.subplot.right'] = 0.97
+mpl.rcParams['figure.subplot.right'] = 0.94
 mpl.rcParams['figure.subplot.top'] = 0.95
 mpl.rcParams['font.size'] = 22
 mpl.rcParams['legend.fontsize'] = 20
@@ -112,11 +112,9 @@ if __name__ == '__main__':
     parser.add_argument('--load_data', action='store_true', help='Enable data loading')
     args = parser.parse_args()
 
-
-
     if args.setting == 'regr':
         all_methods = [advtrain_linf, lasso_cv,  lasso, advtrain_l2, ridge, ridgecv, gboost, mlp]
-        datasets = [diabetes, wine, abalone,  polution, diamonds]
+        datasets = [polution, us_crime, diamonds, house_sales, diabetes, wine, abalone]
         tp = 'regression'
         metrics_names = ['RMSE', 'R2']
         metrics_of_interest = [root_mean_squared_error, r2_score]
@@ -185,8 +183,8 @@ if __name__ == '__main__':
     # Plot figure
     from matplotlib import ticker
 
-    mpl.rcParams['xtick.major.pad'] = 7
-    mpl.rcParams['xtick.minor.pad'] = 25
+    mpl.rcParams['xtick.major.pad'] = 12
+    mpl.rcParams['xtick.minor.pad'] = 32
     mpl.rcParams['xtick.direction'] = 'in'
     fig, ax = plt.subplots()
     width = 0.35
@@ -198,14 +196,15 @@ if __name__ == '__main__':
         ii = ind - width / 2 if i == 0 else ind + width / 2
         rects1 = ax.bar(ii,  ddf[metric_show], width, yerr=y_err, label=methods_name[i])
 
-    plt.xticks(range(len(datasets)), [d.__name__ for d in datasets])
+    names = [d.__name__.replace('_', ' ').capitalize() for d in datasets]
+    plt.xticks(range(len(datasets)),names)
     plt.ylabel(ylabel)
     plt.ylim((0, 1))
     plt.legend( title='')
 
     ax = plt.gca()
-    major_names = [d.__name__ for i, d in enumerate(datasets) if i % 2 == 0]
-    minor_names = [d.__name__ for i, d in enumerate(datasets) if i % 2 == 1]
+    major_names = [n for i, n in enumerate(names) if i % 2 == 0]
+    minor_names = [n for i, n in enumerate(names) if i % 2 == 1]
     major_loc = [i for i, d in enumerate(datasets) if i % 2 == 0]
     minor_loc = [i for i, d in enumerate(datasets) if i % 2 == 1]
     ax.xaxis.set_major_locator(ticker.FixedLocator(major_loc))

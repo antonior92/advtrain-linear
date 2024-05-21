@@ -114,14 +114,22 @@ def diamonds():
     return normalize(X_train, X_test, y_train, y_test)
 
 
-def qsar():
-    dset = fetch_openml(data_id=3277)
-    X = dset['data'].toarray()
-    y = dset['target']
+def house_sales():
+    dset = fetch_openml(data_id=42731)
+    X = dset['data'].drop(columns='zipcode').values
+    y = dset['target'].values
 
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, test_size=0.3, random_state=0)
     return normalize(X_train, X_test, y_train, y_test)
 
+
+def us_crime():
+    dset = fetch_openml(data_id=42730)
+    X = dset['data'].fillna(method='backfill').fillna(method='pad').values
+    y = dset['target'].values
+
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, test_size=0.3, random_state=0)
+    return normalize(X_train, X_test, y_train, y_test)
 
 def gaussian(n_train, n_test, n_params, seed=1, noise_std=0.1):
     rng = np.random.RandomState(seed)
