@@ -26,7 +26,7 @@ do
 done;
 
 
-# Plot mnist
+# Plot MNIST
 python 3-convergence-gd.py --setting compare_lr --dset mnist --load_data --n_iter 10000  --dont_show
 python 3-convergence-gd.py --setting acceleration --dset mnist --load_data --n_iter 1000 --dont_show
 python 3-convergence-gd.py --setting  stochastic --dset mnist --load_data --n_iter 100 --dont_show

@@ -187,14 +187,14 @@ def breast_cancer():
     y = np.asarray(y, dtype=np.float64)
     return X[:400], X[400:], y[:400], y[400:]
 
-def mnist():
+def MNIST():
     X, y = fetch_openml('mnist_784', return_X_y=True)
     X = X.values.astype(np.float64)
     X /= 255  # Normalize between [0, 1]
     y = np.asarray(y == '9', dtype=np.float64)
     return X[:60000], X[60000:], y[:60000], y[60000:]
 
-def magic_classif():
+def MAGIC_C():
     X, y = load_magic(input_folder='../WEBSITE/DATA', output_phenotype='SH_1')
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, test_size=50, random_state=0)
     X_mean = X_train.mean(axis=0)
@@ -203,7 +203,7 @@ def magic_classif():
     X_test = (X_test - X_mean) / X_std
     return X_train, X_test, y_train, y_test
 
-def heartf():
+def heart_failure():
     dset = fetch_openml(data_id=43008)
     X = dset['data'].values[:, :-1]
     y = dset['data'].values[:, -1].astype(int)
@@ -213,7 +213,7 @@ def heartf():
     return X_train, X_test, y_train, y_test
 
 
-def blood_tranfusion():
+def blood_transf():
     dset = fetch_openml(data_id=1464)
     X = dset['data'].values.astype(float)
     y = (dset['target'].values == '2').astype(int)

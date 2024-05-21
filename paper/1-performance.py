@@ -21,7 +21,7 @@ plt.style.use(['mystyle.mpl'])
 mpl.rcParams['figure.figsize'] = 7, 3
 mpl.rcParams['figure.subplot.bottom'] = 0.25
 mpl.rcParams['figure.subplot.right'] = 0.94
-mpl.rcParams['figure.subplot.top'] = 0.95
+mpl.rcParams['figure.subplot.top'] = 0.92
 mpl.rcParams['font.size'] = 22
 mpl.rcParams['legend.fontsize'] = 20
 mpl.rcParams['legend.handlelength'] = 1
@@ -125,7 +125,7 @@ if __name__ == '__main__':
     elif args.setting == 'classif':
         all_methods = [advclassif_linf, logistic]
         tp = 'classification'
-        datasets = [blood_tranfusion, heartf, magic_classif, breast_cancer, iris, mnist, ]
+        datasets = [breast_cancer,  MAGIC_C, iris, MNIST, heart_failure, blood_transf]
         metrics_names = ['AUROC', 'AUPRC']
         metrics_of_interest = [roc_auc_score, average_precision_score]
         methods_to_show = ['advclassif_linf', 'logistic']
@@ -197,10 +197,12 @@ if __name__ == '__main__':
         rects1 = ax.bar(ii,  ddf[metric_show], width, yerr=y_err, label=methods_name[i])
 
     names = [d.__name__.replace('_', ' ').capitalize() for d in datasets]
+    names = [n.replace('Magic c', 'MAGIC C') for n in names]
+    names = [n.replace('Mnist', 'MNIST') for n in names]
     plt.xticks(range(len(datasets)),names)
     plt.ylabel(ylabel)
     plt.ylim((0, 1))
-    plt.legend( title='')
+    plt.legend( title='', bbox_to_anchor=(0.73, 0.6))
 
     ax = plt.gca()
     major_names = [n for i, n in enumerate(names) if i % 2 == 0]
