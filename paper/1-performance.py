@@ -96,8 +96,7 @@ def logistic(X_train, y_train):
     return clf
 
 def advclassif_linf(X_train, y_train):
-    params, info = lin_advclasif(X_train, y_train, p=2, method='agd', max_iter=1000,
-                                adv_radius=1e-20)
+    params, info = lin_advclasif(X_train, y_train, p=np.inf, method='agd', max_iter=100)
     return params
 
 
@@ -117,7 +116,7 @@ if __name__ == '__main__':
 
     if args.setting == 'regr':
         all_methods = [advtrain_linf, lasso_cv,  lasso, advtrain_l2, ridge, ridgecv, gboost, mlp]
-        datasets = [diabetes, wine, abalone, heartf, polution, diamonds]
+        datasets = [diabetes, wine, abalone,  polution, diamonds]
         tp = 'regression'
         metrics_names = ['RMSE', 'R2']
         metrics_of_interest = [root_mean_squared_error, r2_score]
@@ -128,12 +127,12 @@ if __name__ == '__main__':
     elif args.setting == 'classif':
         all_methods = [advclassif_linf, logistic]
         tp = 'classification'
-        datasets = [breast_cancer, iris]
+        datasets = [blood_tranfusion, heartf, magic_classif, breast_cancer, iris, mnist, ]
         metrics_names = ['AUROC', 'AUPRC']
         metrics_of_interest = [roc_auc_score, average_precision_score]
         methods_to_show = ['advclassif_linf', 'logistic']
         methods_name = ['Adv Train', 'Logistic']
-        metric_show = 'AUROC'
+        metric_show = 'AUPRC'
         ylabel = metric_show
 
     columns_names = ['dset', 'method'] + metrics_names + \

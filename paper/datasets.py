@@ -88,13 +88,6 @@ def abalone():
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, test_size=0.3, random_state=0)
     return normalize(X_train, X_test, y_train, y_test)
 
-def heartf():
-    dset = fetch_ucirepo(name="Heart failure clinical records")
-    F = dset.data.features
-    X = F.values
-    y = dset.data.targets.values.flatten()
-    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, test_size=0.3, random_state=0)
-    return normalize(X_train, X_test, y_train, y_test)
 
 
 def polution():
@@ -178,7 +171,7 @@ def gaussian_classification(n_train, n_test, n_params, seed=1, noise_std=0.1, pa
     y_test = (np.sign(X_test @ beta + noise_std * rng.randn(n_test)) + 1) / 2
     return X_train, X_test, y_train.astype(int), y_test.astype(int)
 
-# Classification datasets
+# Classification datasets (Y=0 or 1)
 def breast_cancer():
     X, y = load_breast_cancer(return_X_y=True)
     X -= np.mean(X, axis=0)
@@ -202,6 +195,24 @@ def magic_classif():
     X_test = (X_test - X_mean) / X_std
     return X_train, X_test, y_train, y_test
 
+def heartf():
+    dset = fetch_openml(data_id=43008)
+    X = dset['data'].values[:, :-1]
+    y = dset['data'].values[:, -1].astype(int)
+    X -= X.mean(axis=0)
+    X /= X.std(axis=0)
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, test_size=0.3, random_state=0)
+    return X_train, X_test, y_train, y_test
+
+
+def blood_tranfusion():
+    dset = fetch_openml(data_id=1464)
+    X = dset['data'].values.astype(float)
+    y = (dset['target'].values == '2').astype(int)
+    X -= X.mean(axis=0)
+    X /= X.std(axis=0)
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, test_size=0.3, random_state=0)
+    return X_train, X_test, y_train, y_test
 def iris():
     X, y_ = fetch_openml(data_id=41078, return_X_y=True)
     X = X.values
@@ -210,7 +221,6 @@ def iris():
     X /= X.max(axis=0)  # Normalize each feature to be in [-1, 1], so adversarial training is fair
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, test_size=50, random_state=0)
     return X_train, X_test, y_train, y_test
-
 
 if __name__ == "__main__":
     X_train, X_test, y_train, y_test = gaussian_classification(100, 10, 100)
