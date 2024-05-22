@@ -27,17 +27,13 @@ done;
 
 
 # Plot MNIST
-python 3-convergence-gd.py --setting compare_lr --dset mnist --load_data --n_iter 10000  --dont_show
-python 3-convergence-gd.py --setting acceleration --dset mnist --load_data --n_iter 1000 --dont_show
-python 3-convergence-gd.py --setting  stochastic --dset mnist --load_data --n_iter 100 --dont_show
+python 3-convergence-gd.py --setting compare_lr --dset MNIST --load_data --n_iter 10000 --ls : : : "-"  --dont_show
+python 3-convergence-gd.py --setting acceleration --dset MNIST --load_data --n_iter 1000 --dont_show
+python 3-convergence-gd.py --setting  stochastic --dset MNIST --load_data --n_iter 100 --xlabel "\#  epochs" --dont_show
 # Plot breast cancer
-python 3-convergence-gd.py --setting breast_cancer --dset mnist --load_data --n_iter 1000  --dont_show
-python 3-convergence-gd.py --setting breast_cancer --dset mnist --load_data --n_iter 100 --dont_show
-python 3-convergence-gd.py --setting breast_cancer --dset mnist --load_data --n_iter 100 --dont_show
-# Plot Magic
-python 3-convergence-gd.py --setting magic_classif --dset mnist --load_data --n_iter 1000  --dont_show
-python 3-convergence-gd.py --setting magic_classif --dset mnist --load_data --n_iter 100 --dont_show
-python 3-convergence-gd.py --setting magic_classif --dset mnist --load_data --n_iter 100 --dont_show
+python 3-convergence-gd.py --setting compare_lr  --dset breast_cancer  --n_iter 1000 --ls : : : "-" --dont_show
+python 3-convergence-gd.py --setting acceleration --dset breast_cancer  --n_iter 100 --dont_show
+python 3-convergence-gd.py --setting stochastic --dset breast_cancer --n_iter 100 --xlabel "\#  epochs" --dont_show
 
 # --------------------------
 # --- Figure 4 top + S.2 ---

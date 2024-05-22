@@ -76,7 +76,7 @@ if __name__ == "__main__":
     plt.xlabel('\# iter')
     plt.xlim([-1, np.minimum(args.n_iter, fs.shape[1]) + 1])
     plt.ylim([1e-8, (fs[~np.isnan(fs)] - min_fs).max()])
-    plt.ylabel(r'$R^{(i)} - R_*$')
+    plt.ylabel('sub-optimality')
 
     plt.savefig(f'imgs/convergence_cg_{args.dset}.pdf')
 

@@ -13,14 +13,16 @@ plt.style.use(['mystyle.mpl'])
 # Additional style
 mpl.rcParams['figure.figsize'] = 7, 3
 mpl.rcParams['figure.subplot.left'] = 0.17
-mpl.rcParams['figure.subplot.bottom'] = 0.23
+mpl.rcParams['figure.subplot.bottom'] = 0.25
 mpl.rcParams['figure.subplot.right'] = 0.95
 mpl.rcParams['figure.subplot.top'] = 0.95
 mpl.rcParams['font.size'] = 22
 mpl.rcParams['legend.fontsize'] = 18
+mpl.rcParams['legend.labelspacing'] = 0.15
 mpl.rcParams['legend.handlelength'] = 1
-mpl.rcParams['legend.handletextpad'] = 0.1
+mpl.rcParams['legend.handletextpad'] = 0.15
 mpl.rcParams['xtick.major.pad'] = 7
+mpl.rcParams["axes.labelpad"] = 6
 plt.rcParams['image.cmap'] = 'gray'
 
 
@@ -31,11 +33,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     # Add argument for plotting
     parser.add_argument('--dset', choices=['breast_cancer', 'MNIST', 'MAGIC_C'], default='breast_cancer')
-    parser.add_argument('--setting', choices=['compare_lr', 'acceleration', 'stochastic'], default='compare_lr')
+    parser.add_argument('--setting', choices=['compare_lr', 'acceleration', 'stochastic'], default='stochastic')
     parser.add_argument('--dont_plot', action='store_true', help='Enable plotting')
     parser.add_argument('--dont_show', action='store_true', help='dont show plot, but maybe save it')
     parser.add_argument('--load_data', action='store_true', help='Enable data loading')
     parser.add_argument('--n_iter', type=int, default=100)
+    parser.add_argument('--xlabel', default='\# iter', help='What I have in the X label')
+    parser.add_argument('--ls', nargs='+', default=['-', '-', '-'])
     args = parser.parse_args()
 
     adv_radius = 0.1
@@ -99,17 +103,18 @@ if __name__ == '__main__':
 
     if not args.dont_plot:
         colors = ['b', 'g', 'r', 'k']
-        linestyle = [':', ':', ':', '-']
+        linestyle = args.ls
         plt.figure()
         min_fs = min(fs[~np.isnan(fs)].min(), min_fs)
         for i in range(fs.shape[0]):
-            plt.plot(range(fs.shape[1]), fs[i, :] - min_fs, label=labels[i], color=colors[i], ls=linestyle[i])
+            plt.plot(range(fs.shape[1]), fs[i, :] - min_fs, label=labels[i], color=colors[i], ls=linestyle[i], lw=2)
         plt.yscale('log')
-        plt.legend(loc='upper right')
-        plt.xlabel('\# iter')
-        plt.ylim([1e-8, (fs[~np.isnan(fs)] - min_fs).max()])
+        plt.legend(loc='upper right', bbox_to_anchor=(1.07, 1.12))
+        plt.xlabel(args.xlabel)
+        plt.ylim([1e-8, fs[~np.isnan(fs)].max()])
         plt.xlim([-1, np.minimum(args.n_iter, fs.shape[1]) + 10])
-        plt.ylabel(r'$R^{(i)} - R_*$')
+        # r'$R^{(i)} - R_*$'
+        plt.ylabel('sub-optimality')
         plt.savefig(f'imgs/{args.setting}_{args.dset}.pdf')
         if not args.dont_show:
             plt.show()
