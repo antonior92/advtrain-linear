@@ -68,6 +68,7 @@ class CostFunction:
 
     def compute_grad(self, params, indexes=None):
         w, t = split_params(params)
+
         if indexes is None:
             Vi = self.V
         else:
@@ -76,8 +77,7 @@ class CostFunction:
         aux = compute_aux(Vi, w, t, self.adv_radius)
         grad_param = - 1 / self.n_train * Vi.T @ (1 - aux)
         grad_max_norm = 1 / self.n_train * self.adv_radius * np.sum(1 - aux)
-        return merge_params(self.grad_buffer, grad_param, grad_max_norm)
-
+        return  merge_params(self.grad_buffer, grad_param, grad_max_norm)
     def compute_jac(self, params, indexes=None):
         w, t = split_params(params)
         if indexes is None:

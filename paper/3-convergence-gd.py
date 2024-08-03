@@ -33,13 +33,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     # Add argument for plotting
     parser.add_argument('--dset', choices=['breast_cancer', 'MNIST', 'MAGIC_C'], default='breast_cancer')
-    parser.add_argument('--setting', choices=['compare_lr', 'acceleration', 'stochastic'], default='stochastic')
+    parser.add_argument('--setting', choices=['compare_lr', 'acceleration', 'stochastic', 'batch_size'], default='stochastic')
     parser.add_argument('--dont_plot', action='store_true', help='Enable plotting')
     parser.add_argument('--dont_show', action='store_true', help='dont show plot, but maybe save it')
     parser.add_argument('--load_data', action='store_true', help='Enable data loading')
     parser.add_argument('--n_iter', type=int, default=100)
     parser.add_argument('--xlabel', default='\# iter', help='What I have in the X label')
-    parser.add_argument('--ls', nargs='+', default=['-', '-', '-'])
+    parser.add_argument('--ls', nargs='+', default=['-', '-', '-', '-', '-', '-'])
     args = parser.parse_args()
 
     adv_radius = 0.1
@@ -72,6 +72,16 @@ if __name__ == '__main__':
         labels = ['GD', 'SGD', 'SAGA']
 
 
+    # Rebuttal Fig. 4
+    elif args.setting == 'batch_size':
+        configs = [{'method': 'sgd', 'batch_size': 1, 'lr': '10/L', 'reduce_lr': False},
+                   {'method': 'sgd', 'batch_size': 4, 'lr': '10/L','reduce_lr': False},
+                   {'method': 'sgd', 'batch_size': 16, 'lr': '10/L',  'reduce_lr': False},
+                   {'method': 'sgd', 'batch_size': 64, 'lr': '10/L', 'reduce_lr': False},
+                   {'method': 'gd', 'backtrack': False, 'lr': '10/L'},]
+        labels = ['BS=1', 'BS=4', 'BS=16', 'BS=64',  'GD']
+
+
     if args.load_data:
         print('loading data...')
         fs = np.loadtxt(f'data/{args.setting}_{args.dset}.csv')
@@ -102,7 +112,7 @@ if __name__ == '__main__':
         np.savetxt(f'data/{args.setting}_{args.dset}.csv', fs)
 
     if not args.dont_plot:
-        colors = ['b', 'g', 'r', 'k']
+        colors = ['b', 'g', 'r', 'm', 'k', 'c']
         linestyle = args.ls
         plt.figure()
         min_fs = min(fs[~np.isnan(fs)].min(), min_fs)

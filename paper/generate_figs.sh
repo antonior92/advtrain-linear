@@ -75,3 +75,12 @@ python 1-performance.py --setting classif
 # now running on Hyperion (screen  253869.time-eval)
 python 5-syntetic-dsets.py --setting comparing_advtrain_linf_methods_classif --dont_plot --n_points 10 --increasing_scale 50
 python 5-syntetic-dsets.py --setting comparing_advtrain_linf_methods_classif --plot_type time --load_data
+
+
+
+
+# -----------------------------
+# --- Neurips Rebutal Fig 4 ---
+# -----------------------------
+python 3-convergence-gd.py --setting batch_size --dset breast_cancer --n_iter 1000 --dont_plot
+python 3-convergence-gd.py --setting batch_size --dset breast_cancer --n_iter 500 --load_data --dont_plot
