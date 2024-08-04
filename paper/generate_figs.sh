@@ -78,6 +78,18 @@ python 5-syntetic-dsets.py --setting comparing_advtrain_linf_methods_classif --p
 
 
 
+# -----------------------------
+# --- Neurips Rebutal Fig 1(a) ---
+# -----------------------------
+python 3-convergence-gd.py --setting fgsm --dset breast_cancer --n_iter 1000 --dont_plot
+python 3-convergence-gd.py --setting fgsm --dset breast_cancer --n_iter 500 --load_data --dont_plot
+
+
+# -----------------------------
+# --- Neurips Rebutal Fig 1(a) ---
+# -----------------------------
+python 3-convergence-gd.py --setting fgsm-sgd --dset breast_cancer --n_iter 100 --dont_plot
+
 
 # -----------------------------
 # --- Neurips Rebutal Fig 4 ---

@@ -66,6 +66,13 @@ class CostFunction:
         aux = compute_aux(self.V, w, t, self.adv_radius)
         return 1 / self.n_train * np.sum(-np.log(aux))
 
+    def compute_cost_fgsm(self, params):
+        w = params
+        t = np.linalg.norm(params, ord=self.q)
+
+        aux = compute_aux(self.V, w, t, self.adv_radius)
+        return 1 / self.n_train * np.sum(-np.log(aux))
+
     def compute_grad(self, params, indexes=None):
         w, t = split_params(params)
 
@@ -78,6 +85,28 @@ class CostFunction:
         grad_param = - 1 / self.n_train * Vi.T @ (1 - aux)
         grad_max_norm = 1 / self.n_train * self.adv_radius * np.sum(1 - aux)
         return  merge_params(self.grad_buffer, grad_param, grad_max_norm)
+
+    def compute_grad_fgsm(self, params, indexes=None):
+        w = params
+        t = np.linalg.norm(params, ord=self.q)
+
+        if indexes is None:
+            Vi = self.V
+        else:
+            indexes = np.random.permutation(indexes)
+            Vi = self.V[indexes, :]
+        aux = compute_aux(Vi, w, t, self.adv_radius)
+        grad_param = - 1 / self.n_train * Vi.T @ (1 - aux)
+        grad_max_norm = 1 / self.n_train * self.adv_radius * np.sum(1 - aux)
+        if self.q == 1:
+            print('bla')
+            return grad_param + grad_max_norm * np.sign(params)
+        elif self.q == 2:
+            return grad_param + grad_max_norm * params / np.linalg.norm(params)
+        else:
+            raise ValueError
+
+
     def compute_jac(self, params, indexes=None):
         w, t = split_params(params)
         if indexes is None:
@@ -115,12 +144,19 @@ def lin_advclasif(X, y, adv_radius=None, p=2, verbose=False, method='agd', backt
         adv_radius = 'randn_zero'
     if isinstance(adv_radius, str):
         adv_radius = get_radius(X, y, adv_radius, p)
-    rho = 1/2 * np.sqrt(power_method_covmatr(X))
+    if method in ['fgsm-gd', 'fgsm-sgd']:
+        rho = adv_radius
+    else:
+        rho = 1/2 * np.sqrt(power_method_covmatr(X))
     cost = CostFunction(X, y, rho, p)
     prox = lambda x: projection(x, p=p, delta=adv_radius, rho=rho)
-    w0 = np.zeros(cost.n_params + 1)
     costs = np.empty(max_iter + 1)
-    costs[0] = cost.compute_cost(w0)
+    if method in ['fgsm-gd', 'fgsm-sgd']:
+        w0 = np.zeros(cost.n_params)
+        costs[0] = cost.compute_cost_fgsm(w0)
+    else:
+        w0 = np.zeros(cost.n_params + 1)
+        costs[0] = cost.compute_cost(w0)
     costs[1:] = np.nan
 
     def new_callback(i, w, f, update_size):
@@ -156,6 +192,11 @@ def lin_advclasif(X, y, adv_radius=None, p=2, verbose=False, method='agd', backt
     elif method == 'saga':
         n_train = X.shape[0]
         w = saga(w0, cost.compute_cost, cost.compute_jac, n_train, prox=prox, callback=new_callback, lr=lr, max_iter=max_iter, **kwargs)
+    elif method == 'fgsm-gd':
+        w = gd(w0, cost.compute_cost_fgsm, cost.compute_grad_fgsm, callback=new_callback, lr=lr, decreasing_lr=True, max_iter=max_iter, **kwargs)
+    elif method == 'fgsm-sgd':
+        n_train = X.shape[0]
+        w = sgd(w0, cost.compute_cost_fgsm, cost.compute_grad_fgsm, n_train, callback=new_callback, lr=lr, max_iter=max_iter, **kwargs)
     param, t = split_params(w)
     return param, {'costs': costs}
 

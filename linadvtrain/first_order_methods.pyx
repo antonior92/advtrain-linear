@@ -7,7 +7,7 @@ def identity(np.ndarray[np.float64_t, ndim=1]  x):
     return x
 
 def gd(np.ndarray[np.float64_t, ndim=1] w0,  object compute_cost, object compute_grad,
-       object prox = None,  object callback=None,  int max_iter=10000, float lr=1.0,
+       object prox = None,  object callback=None,  int max_iter=10000, float lr=1.0, object decreasing_lr = False,
        float utol=1e-12, int every_ith=1):
     if prox is None:
       prox = identity
@@ -22,7 +22,11 @@ def gd(np.ndarray[np.float64_t, ndim=1] w0,  object compute_cost, object compute
         cost = compute_cost(w)
         grad = compute_grad(w)
         # Do updates
-        new_w = prox(w - lr * grad)
+        if decreasing_lr:
+            lr_ =  lr / np.sqrt(i+1)
+        else:
+            lr_ = lr
+        new_w = prox(w - lr_ * grad)
         update_size = np.linalg.norm(new_w - w)
         w = new_w
         if i % every_ith == 0 and callback is not None:

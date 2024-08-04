@@ -71,6 +71,7 @@ def test_linf(adv_radius):
     assert allclose(params_cvxpy, params, rtol=1e-8, atol=1e-6)
 
 
+
 # -------- Lin Adv train --------- #
 @pytest.mark.parametrize("adv_radius", [0.1])
 def test_l2_sgd(adv_radius):  # SGD does not converge in this case!

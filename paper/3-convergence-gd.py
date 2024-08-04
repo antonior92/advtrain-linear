@@ -33,7 +33,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     # Add argument for plotting
     parser.add_argument('--dset', choices=['breast_cancer', 'MNIST', 'MAGIC_C'], default='breast_cancer')
-    parser.add_argument('--setting', choices=['compare_lr', 'acceleration', 'stochastic', 'batch_size'], default='stochastic')
+    parser.add_argument('--setting', choices=['compare_lr', 'acceleration', 'stochastic', 'batch_size', 'fgsm', 'fgsm-sgd'], default='stochastic')
     parser.add_argument('--dont_plot', action='store_true', help='Enable plotting')
     parser.add_argument('--dont_show', action='store_true', help='dont show plot, but maybe save it')
     parser.add_argument('--load_data', action='store_true', help='Enable data loading')
@@ -63,6 +63,18 @@ if __name__ == '__main__':
         configs = [{'method': 'gd', 'backtrack': True},
                    {'method': 'agd', 'backtrack': True}]
         labels = ['GD', 'AGD']
+
+    elif args.setting == 'fgsm':
+        configs = [{'method': 'fgsm-gd', 'lr': '40/L'},
+                   {'method': 'gd', 'backtrack': False, 'lr': '40/L'}]
+        labels = ['FGSM ', 'GD']
+
+    elif args.setting == 'fgsm-sgd':
+        configs = [{'method': 'fgsm-sgd', 'lr': '100/L'},
+                   {'method': 'sgd', 'backtrack': False, 'lr': '200/L'},
+                   {'method': 'saga'},
+                   ]
+        labels = ['FGSM ', 'SGD', 'SAGA']
 
     # Fig 2(c)
     elif args.setting == 'stochastic':
