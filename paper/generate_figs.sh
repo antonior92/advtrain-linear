@@ -86,13 +86,35 @@ python 3-convergence-gd.py --setting fgsm --dset breast_cancer --n_iter 500 --lo
 
 
 # -----------------------------
-# --- Neurips Rebutal Fig 1(a) ---
+# --- Neurips Rebutal Fig 1(b) ---
 # -----------------------------
 python 3-convergence-gd.py --setting fgsm-sgd --dset breast_cancer --n_iter 100 --dont_plot
 
 
 # -----------------------------
-# --- Neurips Rebutal Fig 4 ---
+# --- Neurips Rebutal Fig 2 ---
+# -----------------------------
+python 3-convergence-gd.py --setting fgsm-sgd --dset breast_cancer --n_iter 100 --dont_plot
+
+
+
+# -----------------------------
+# --- Neurips Rebutal Fig 2 ---
 # -----------------------------
 python 3-convergence-gd.py --setting batch_size --dset breast_cancer --n_iter 1000 --dont_plot
 python 3-convergence-gd.py --setting batch_size --dset breast_cancer --n_iter 500 --load_data --dont_plot
+
+
+# -----------------------------
+# --- Neurips Rebutal Fig 3 ---
+# -----------------------------
+# running 742260.magic
+python 5-syntetic-dsets.py --setting magic --n_reps 5 --dont_plot
+python 5-syntetic-dsets.py --setting magic --n_reps 5 --load_data
+
+
+# -----------------------------
+# --- Neurips Rebutal Table CVXPY ---
+# -----------------------------
+# running hyperion:cvxpy
+python comparing_cvxpy_configs.py
