@@ -53,7 +53,7 @@ def ridge_cg(X, y, reg,  *args, **kwargs):
         b = X.T @ y
         params_cg = cg(A, b)
     else:   # Use dual formualation
-        A = X @ X.T + 0.1 * np.eye(n_train)
+        A = X @ X.T + reg * np.eye(n_train)
         b = y
         params_cg = X.T @ cg(A, b)
     return params_cg
