@@ -112,4 +112,7 @@ python 1-performance.py --setting regr_rebuttal --adv_radius 0.2
 python 1-performance.py --setting regr_rebuttal --adv_radius 0
 
 # Anonymous figure A
-python 6-
+ python 6-under-adversarial-attacks.py
+
+ # Anonymous figure B
+ python 7-regression-vs-baseline.py
