@@ -102,3 +102,14 @@ python comparing_cvxpy_configs.py
 python 5-syntetic-dsets.py --setting magic --n_reps 5 --dont_plot
 python 5-syntetic-dsets.py --setting magic --n_reps 5 --load_data
 
+
+# -----------------------------
+# --- Rebuttal ---
+# -----------------------------
+
+# Table 1
+python 1-performance.py --setting regr_rebuttal --adv_radius 0.2
+python 1-performance.py --setting regr_rebuttal --adv_radius 0
+
+# Anonymous figure A
+python 6-

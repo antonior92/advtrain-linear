@@ -13,7 +13,20 @@ from linadvtrain.adversarial_attack import compute_adv_attack
 from sklearn.metrics import (r2_score)
 
 # Basic style
+# Basic style
 plt.style.use(['mystyle.mpl'])
+
+
+# Additional style
+mpl.rcParams['figure.figsize'] = 7, 3
+mpl.rcParams['figure.subplot.bottom'] = 0.20
+mpl.rcParams['figure.subplot.right'] = 0.94
+mpl.rcParams['figure.subplot.left'] = 0.2
+mpl.rcParams['figure.subplot.top'] = 0.92
+mpl.rcParams['font.size'] = 22
+mpl.rcParams['legend.fontsize'] = 20
+mpl.rcParams['legend.handlelength'] = 1
+mpl.rcParams['legend.handletextpad'] = 0.3
 
 # --------------------------
 # --- Regression Methods ---
@@ -97,9 +110,9 @@ if __name__ == '__main__':
     c = ['red', 'blue', 'green', 'cyan']
     for i, m in enumerate(all_methods):
         plot_errorbar(df[df['methods'] == mylabels[i]], 'alpha',  'R-squared-adv', ax, mylabels[i], color=c[i])
-    plt.ylabel('R-squared Adv')
-    plt.xlabel('adv. radius')
+    plt.ylabel('Adv. R-squared')
+    plt.xlabel('$$\delta$$')
     plt.xscale('log')
     plt.legend()
-    plt.savefig('imgs/rebuttal.pdf')
+    plt.savefig('imgs/rebuttal_advtrain.pdf')
     plt.show()
