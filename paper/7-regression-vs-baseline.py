@@ -13,9 +13,9 @@ from sklearn.linear_model import ElasticNetCV, LassoLarsIC, Lasso
 plt.style.use(['mystyle.mpl'])
 
 # Additional style
-mpl.rcParams['figure.figsize'] = 7, 3
-mpl.rcParams['figure.subplot.bottom'] = 0.23
-mpl.rcParams['figure.subplot.right'] = 0.99
+mpl.rcParams['figure.figsize'] = 7, 5
+mpl.rcParams['figure.subplot.bottom'] = 0.35
+mpl.rcParams['figure.subplot.right'] = 0.95
 mpl.rcParams['figure.subplot.left'] = 0.14
 mpl.rcParams['figure.subplot.top'] = 0.95
 mpl.rcParams['font.size'] = 22
@@ -24,6 +24,7 @@ mpl.rcParams['legend.handlelength'] = 1
 mpl.rcParams['legend.handletextpad'] = 0.5
 mpl.rcParams['legend.labelspacing'] = 0.2
 mpl.rcParams['xtick.major.pad'] = 7
+mpl.rcParams['figure.constrained_layout.h_pad'] = 0.5
 
 
 if __name__ == "__main__":
@@ -93,16 +94,35 @@ if __name__ == "__main__":
     colors = ['b', 'g', 'r', 'c', 'k']
     linestyle = ['-', '-', ':', ':', '-']
     plt.figure()
+    fig, axs = plt.subplots(2, 1)  # Get the current axis
+    ax1 = axs[0]
     for i in range(fs.shape[0]):
-        plt.plot(range(fs.shape[1]), fs[i, :] - min_fs, label=labels[i], color=colors[i], ls=linestyle[i])
+        ax1.plot(range(fs.shape[1]), fs[i, :] - min_fs, label=labels[i], color=colors[i], ls=linestyle[i])
 
-    plt.plot(np.arange(num_steps)/ X_train.shape[1], loss_gd  - min_fs, label='GD', color='red', ls=':')
-    plt.yscale('log')
-    plt.legend(loc='upper right')
-    plt.xlabel('\# iter')
-    plt.xlim([-1, np.minimum(args.n_iter, fs.shape[1]) + 1])
-    #plt.ylim([1e-8, (fs[~np.isnan(fs)] - min_fs).max()])
-    plt.ylabel('sub-optimality')
+    ax1.set_yscale('log')
+    ax1.set_xlabel('\# iter')
+    ax1.set_ylabel('sub-optimality')
+    ax1.set_xlim([-1, np.minimum(100, fs.shape[1]) + 1])
+    ax1.legend(loc='lower left')
+    ax1.set_ylim([1e-12, 1e0])
+    ax1.set_xticks([0, 20, 40, 60, 80, 100])
+    ax1.set_xticklabels([0, 20, 40, 60, 80, 100])
+
+    # Secondary axis
+    ax2 = axs[1]
+    ax2.plot(np.arange(num_steps), loss_gd - min_fs, label='Gradient Descent', color='red')
+    ax2.set_yscale('log')
+    ax2.set_xlabel('\# iter')
+    ax2.set_ylabel('sub-optimality')
+    ax2.set_ylim([1e-12, 1e0])
+    ax2.tick_params(axis='x')
+    ax2.set_xticks([0, 2000, 4000, 6000, 8000, 10000])
+    ax2.set_xticklabels([0, 2000, 4000, 6000, 8000, 10000])
+    ax2.set_xlim([-100, 10100])
+    ax2.legend(loc='lower left')
+
+    plt.tight_layout()
+
 
     plt.show()
 
