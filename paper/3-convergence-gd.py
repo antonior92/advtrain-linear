@@ -13,14 +13,16 @@ plt.style.use(['mystyle.mpl'])
 # Additional style
 mpl.rcParams['figure.figsize'] = 7, 3
 mpl.rcParams['figure.subplot.left'] = 0.17
-mpl.rcParams['figure.subplot.bottom'] = 0.23
+mpl.rcParams['figure.subplot.bottom'] = 0.25
 mpl.rcParams['figure.subplot.right'] = 0.95
 mpl.rcParams['figure.subplot.top'] = 0.95
 mpl.rcParams['font.size'] = 22
 mpl.rcParams['legend.fontsize'] = 18
+mpl.rcParams['legend.labelspacing'] = 0.15
 mpl.rcParams['legend.handlelength'] = 1
-mpl.rcParams['legend.handletextpad'] = 0.1
+mpl.rcParams['legend.handletextpad'] = 0.15
 mpl.rcParams['xtick.major.pad'] = 7
+mpl.rcParams["axes.labelpad"] = 6
 plt.rcParams['image.cmap'] = 'gray'
 
 
@@ -31,11 +33,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     # Add argument for plotting
     parser.add_argument('--dset', choices=['breast_cancer', 'MNIST', 'MAGIC_C'], default='breast_cancer')
-    parser.add_argument('--setting', choices=['compare_lr', 'acceleration', 'stochastic'], default='compare_lr')
+    parser.add_argument('--setting', choices=['compare_lr', 'acceleration', 'stochastic', 'batch_size', 'fgsm', 'fgsm-sgd'], default='stochastic')
     parser.add_argument('--dont_plot', action='store_true', help='Enable plotting')
     parser.add_argument('--dont_show', action='store_true', help='dont show plot, but maybe save it')
     parser.add_argument('--load_data', action='store_true', help='Enable data loading')
     parser.add_argument('--n_iter', type=int, default=100)
+    parser.add_argument('--xlabel', default='\# iter', help='What I have in the X label')
+    parser.add_argument('--ls', nargs='+', default=['-', '-', '-', '-', '-', '-'])
     args = parser.parse_args()
 
     adv_radius = 0.1
@@ -60,12 +64,34 @@ if __name__ == '__main__':
                    {'method': 'agd', 'backtrack': True}]
         labels = ['GD', 'AGD']
 
+    elif args.setting == 'fgsm':
+        configs = [{'method': 'fgsm-gd', 'lr': '40/L'},
+                   {'method': 'gd', 'backtrack': False, 'lr': '40/L'}]
+        labels = ['FGSM ', 'GD']
+
+    elif args.setting == 'fgsm-sgd':
+        configs = [{'method': 'fgsm-sgd', 'lr': '100/L'},
+                   {'method': 'sgd', 'backtrack': False, 'lr': '200/L'},
+                   {'method': 'saga'},
+                   ]
+        labels = ['FGSM ', 'SGD', 'SAGA']
+
     # Fig 2(c)
     elif args.setting == 'stochastic':
         configs = [{'method': 'gd', 'backtrack': True},
                    {'method': 'sgd', 'lr': '200/L'},
                    {'method': 'saga'}]
         labels = ['GD', 'SGD', 'SAGA']
+
+
+    # Rebuttal Fig. 4
+    elif args.setting == 'batch_size':
+        configs = [{'method': 'sgd', 'batch_size': 1, 'lr': '10/L', 'reduce_lr': False},
+                   {'method': 'sgd', 'batch_size': 4, 'lr': '10/L','reduce_lr': False},
+                   {'method': 'sgd', 'batch_size': 16, 'lr': '10/L',  'reduce_lr': False},
+                   {'method': 'sgd', 'batch_size': 64, 'lr': '10/L', 'reduce_lr': False},
+                   {'method': 'gd', 'backtrack': False, 'lr': '10/L'},]
+        labels = ['BS=1', 'BS=4', 'BS=16', 'BS=64',  'GD']
 
 
     if args.load_data:
@@ -98,18 +124,19 @@ if __name__ == '__main__':
         np.savetxt(f'data/{args.setting}_{args.dset}.csv', fs)
 
     if not args.dont_plot:
-        colors = ['b', 'g', 'r', 'k']
-        linestyle = [':', ':', ':', '-']
+        colors = ['b', 'g', 'r', 'm', 'k', 'c']
+        linestyle = args.ls
         plt.figure()
         min_fs = min(fs[~np.isnan(fs)].min(), min_fs)
         for i in range(fs.shape[0]):
-            plt.plot(range(fs.shape[1]), fs[i, :] - min_fs, label=labels[i], color=colors[i], ls=linestyle[i])
+            plt.plot(range(fs.shape[1]), fs[i, :] - min_fs, label=labels[i], color=colors[i], ls=linestyle[i], lw=2)
         plt.yscale('log')
-        plt.legend(loc='upper right')
-        plt.xlabel('\# iter')
-        plt.ylim([1e-8, (fs[~np.isnan(fs)] - min_fs).max()])
+        plt.legend(loc='upper right', bbox_to_anchor=(1.07, 1.12))
+        plt.xlabel(args.xlabel)
+        plt.ylim([1e-8, fs[~np.isnan(fs)].max()])
         plt.xlim([-1, np.minimum(args.n_iter, fs.shape[1]) + 10])
-        plt.ylabel(r'$R^{(i)} - R_*$')
+        # r'$R^{(i)} - R_*$'
+        plt.ylabel('sub-optimality')
         plt.savefig(f'imgs/{args.setting}_{args.dset}.pdf')
         if not args.dont_show:
             plt.show()

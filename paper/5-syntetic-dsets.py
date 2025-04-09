@@ -101,7 +101,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # Add argument for plotting
     parser.add_argument('--setting', choices=['spiked_covariance', 'sparse_gaussian', 'gaussian_overp',
-                                            'comparing_advtrain_linf_methods', 'comparing_advtrain_linf_methods_classif'],
+                                            'comparing_advtrain_linf_methods', 'comparing_advtrain_linf_methods_classif', 'magic'],
                         default='comparing_advtrain_linf_methods_classif')
     parser.add_argument('--plot_type', choices=['R-squared', 'time'], default='R-squared')
     parser.add_argument('--dont_plot', action='store_true', help='Enable plotting')
@@ -182,7 +182,18 @@ if __name__ == "__main__":
             n_params = int(0.1 * n_train)
             print(n_train, n_params)
             return gaussian_classification(n_train, n_test, n_params, seed=rep, noise_std=0.1)
-
+    elif args.setting == 'magic':
+        xlabel = r'\# params'
+        all_methods = [advtrain_linf, lasso_cv]
+        mylabels = ['Adv Train', 'Lasso CV']
+        configs = np.array([30, 100, 300, 1000, 3000, 10000, 30000, 100000])
+        X_train_, X_test_, y_train, y_test = magic()
+        rng = np.random.RandomState(1)
+        def dset(n_params):
+            indices = rng.choice(X_train_.shape[1], size=n_params)
+            X_train = X_train_[:, indices]
+            X_test = X_test_[:, indices]
+            return X_train, X_test, y_train, y_test
 
     if args.load_data:
         print('loading data...')
@@ -220,9 +231,11 @@ if __name__ == "__main__":
             plot_errorbar(df[df['methods'] == mylabels[i]], 'alpha',  args.plot_type, ax, mylabels[i], color=c[i])
         plt.ylabel(args.plot_type)
         plt.xlabel(xlabel)
+        plt.xscale('log')
         if args.plot_type == 'R-squared':
             plt.ylim((0, 1))
-        plt.yscale('log')
+        else:
+            plt.yscale('log')
         plt.legend()
         plt.savefig('imgs/' + args.setting + '.pdf')
         if not args.dont_show:

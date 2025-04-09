@@ -53,7 +53,7 @@ def ridge_cg(X, y, reg,  *args, **kwargs):
         b = X.T @ y
         params_cg = cg(A, b)
     else:   # Use dual formualation
-        A = X @ X.T + 0.1 * np.eye(n_train)
+        A = X @ X.T + reg * np.eye(n_train)
         b = y
         params_cg = X.T @ cg(A, b)
     return params_cg
@@ -168,7 +168,7 @@ def get_radius(X, y, option, p, seed=0, percentile=95):
     if option == 'zero':
         return np.linalg.norm(X.T @ y, ord=p) / np.sum(np.abs(y))
     elif option == 'randn_zero':
-        n_realizations = 500
+        n_realizations = 1000
         rng = np.random.RandomState(seed)
         e = rng.randn(X.shape[0], n_realizations)
         adv_radius_est = np.mean(np.linalg.norm(X.T @ e, ord=p, axis=0) / np.sum(np.abs(e), axis=0))

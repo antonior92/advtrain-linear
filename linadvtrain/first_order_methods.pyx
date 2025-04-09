@@ -7,7 +7,7 @@ def identity(np.ndarray[np.float64_t, ndim=1]  x):
     return x
 
 def gd(np.ndarray[np.float64_t, ndim=1] w0,  object compute_cost, object compute_grad,
-       object prox = None,  object callback=None,  int max_iter=10000, float lr=1.0,
+       object prox = None,  object callback=None,  int max_iter=10000, float lr=1.0, object decreasing_lr = False,
        float utol=1e-12, int every_ith=1):
     if prox is None:
       prox = identity
@@ -22,7 +22,11 @@ def gd(np.ndarray[np.float64_t, ndim=1] w0,  object compute_cost, object compute
         cost = compute_cost(w)
         grad = compute_grad(w)
         # Do updates
-        new_w = prox(w - lr * grad)
+        if decreasing_lr:
+            lr_ =  lr / np.sqrt(i+1)
+        else:
+            lr_ = lr
+        new_w = prox(w - lr_ * grad)
         update_size = np.linalg.norm(new_w - w)
         w = new_w
         if i % every_ith == 0 and callback is not None:
@@ -151,8 +155,9 @@ def agd_with_backtrack(np.ndarray[np.float64_t, ndim=1] w0, object compute_cost,
 
 
 def sgd(np.ndarray[np.float64_t, ndim=1] w0,  object compute_cost, object compute_grad,  int n_train, int batch_size=1,
-        object prox = None, object callback=None,  int max_iter=100, float lr=1.0,
+        object prox = None, object callback=None,  int max_iter=100, float lr=1.0, object reduce_lr = True,
         float utol=1e-12, int every_ith=1):
+    print('sgd1')
     if prox is None:
        prox = identity
 
@@ -164,23 +169,27 @@ def sgd(np.ndarray[np.float64_t, ndim=1] w0,  object compute_cost, object comput
     cdef np.ndarray[long, ndim = 1]  indexes = np.random.permutation(np.arange(n_train))
     cdef np.ndarray[long, ndim = 1]  indexes_batch = np.zeros(batch_size, dtype=long)
     cdef int i, s
-    cdef int n_batches = n_train // batch_size
 
     n_vals = 0
     for i in range(max_iter):
-        for s in range(n_batches):
-            indexes_batch[:] = indexes[batch_size*s:batch_size*(s+1)]
-            grad = compute_grad(w, indexes_batch)
-            new_w = prox(w - lr / np.sqrt(i+1) * grad)
-            w = 1 / (n_vals +1) * (new_w + n_vals * mean_w)
-            n_vals += 1
+        s = 0
+        while batch_size * s < n_train:
+            if batch_size*(s+1) > n_train:
+                grad = compute_grad(w, indexes[batch_size * s:])
+            else:
+                grad = compute_grad(w, indexes[batch_size*s:batch_size*(s+1)])
+            lr_p=  lr / np.sqrt(i+1) if reduce_lr else lr
+            new_w = prox(w - lr_p  * grad)
             update_size = np.linalg.norm(new_w - w)
             w = new_w
+            n_vals += 1
+            s+= 1
         if i % every_ith == 0 and callback is not None:
             callback(i, w, compute_cost(w), update_size)
         if update_size < utol:
             break
         indexes = np.random.permutation(np.arange(n_train))
+    print(w)
     return w
 
 
