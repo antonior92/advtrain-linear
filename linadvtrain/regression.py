@@ -60,10 +60,10 @@ def ridge_cg(X, y, reg,  *args, **kwargs):
 
 
 def compute_q(p):
-    if p != np.Inf and p > 1:
+    if p != np.inf and p > 1:
         q = p / (p - 1)
     elif p == 1:
-        q = np.Inf
+        q = np.inf
     else:
         q = 1
     return q
