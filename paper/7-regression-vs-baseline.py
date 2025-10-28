@@ -13,7 +13,7 @@ from sklearn.linear_model import ElasticNetCV, LassoLarsIC, Lasso
 plt.style.use(['mystyle.mpl'])
 
 # Additional style
-mpl.rcParams['figure.figsize'] = 7, 5
+mpl.rcParams['figure.figsize'] = 8, 6
 mpl.rcParams['figure.subplot.bottom'] = 0.35
 mpl.rcParams['figure.subplot.right'] = 0.95
 mpl.rcParams['figure.subplot.left'] = 0.14
@@ -122,7 +122,7 @@ if __name__ == "__main__":
     ax2.legend(loc='lower left')
 
     plt.tight_layout()
-
+    plt.savefig('imgs/rebuttal_baseline_gd.pdf')
 
     plt.show()
 

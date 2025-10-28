@@ -103,16 +103,19 @@ python 5-syntetic-dsets.py --setting magic --n_reps 5 --dont_plot
 python 5-syntetic-dsets.py --setting magic --n_reps 5 --load_data
 
 
-# -----------------------------
-# --- Rebuttal ---
-# -----------------------------
-
-# Table 1
+# ----------------
+# --- Table 2 ---
+# ---------------
 python 1-performance.py --setting regr_rebuttal --adv_radius 0.2
-python 1-performance.py --setting regr_rebuttal --adv_radius 0
 
-# Anonymous figure A
+
+# -----------------
+# --- Figure 6 ---
+# ----------------
  python 6-under-adversarial-attacks.py
 
- # Anonymous figure B
+
+# -----------------
+# --- Figure SX ---
+# ----------------
  python 7-regression-vs-baseline.py
